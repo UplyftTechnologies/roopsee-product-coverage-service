@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .constants import QUIZ_OPTIONS
+from .profile_rules import special_sets_for_gender
 
 
 def representative_profiles(limit: int = 72) -> list[dict[str, Any]]:
@@ -38,20 +39,14 @@ def representative_profiles(limit: int = 72) -> list[dict[str, Any]]:
         ["Dry Under Eye", "Sensitive Eye"],
         ["Dull Lips", "Dehydrated Lips"],
     ]
-    specials = [
-        ["None"],
-        ["Excessive Dryness"],
-        ["Pregnant"],
-        ["Breastfeeding"],
-        ["Pregnant", "Breastfeeding"],
-    ]
-
     profiles: list[dict[str, Any]] = []
     for skin_index, skin_type in enumerate(skin_types):
         for concern_index, concerns in enumerate(face_pairs):
+            gender = "male" if concern_index % 2 == 0 else "female"
+            specials = special_sets_for_gender(gender)
             profiles.append({
                 "age": ages[(skin_index + concern_index) % len(ages)],
-                "selectedGender": "male" if concern_index % 2 == 0 else "female",
+                "selectedGender": gender,
                 "selectedSkinType": skin_type,
                 "selectedFaceBodyConcerns": concerns,
                 "selectedLipsEyesConcerns": [],
@@ -62,9 +57,11 @@ def representative_profiles(limit: int = 72) -> list[dict[str, Any]]:
 
     for skin_index, skin_type in enumerate(skin_types):
         for concern_index, concerns in enumerate(lips_eye_pairs):
+            gender = "male" if skin_index % 2 == 0 else "female"
+            specials = special_sets_for_gender(gender)
             profiles.append({
                 "age": ages[(skin_index + concern_index) % len(ages)],
-                "selectedGender": "male" if skin_index % 2 == 0 else "female",
+                "selectedGender": gender,
                 "selectedSkinType": skin_type,
                 "selectedFaceBodyConcerns": [],
                 "selectedLipsEyesConcerns": concerns,

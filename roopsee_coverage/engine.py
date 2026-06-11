@@ -5,6 +5,7 @@ from typing import Any
 
 from .constants import THRESHOLDS
 from .loaders import load_score_rows, parse_catalog
+from .profile_rules import sanitize_profile
 from .scoring import score_row_for_profile, summarize_results, target_sheets, threshold_counts
 from .utils import norm_key
 
@@ -32,14 +33,17 @@ class RecommendationEngine:
         ]
 
     def recommend(self, profile: dict[str, Any], limit: int = 60) -> dict[str, Any]:
-        wanted_sheets = target_sheets(profile)
+        scoring_profile, profile_adjustments = sanitize_profile(profile)
+        wanted_sheets = target_sheets(scoring_profile)
         best_by_uid: dict[str, dict[str, Any]] = {}
         for key, rows in self.score_rows_by_catalog_key.items():
             catalog = self.catalog[key]
             for row in rows:
                 if row.source_sheet not in wanted_sheets:
                     continue
-                scored = score_row_for_profile(row, catalog, profile)
+                scored = score_row_for_profile(row, catalog, scoring_profile)
+                if profile_adjustments:
+                    scored["warnings"] = profile_adjustments + scored["warnings"]
                 existing = best_by_uid.get(catalog["product_uid"])
                 if existing is None or scored["score"] > existing["score"]:
                     best_by_uid[catalog["product_uid"]] = scored
@@ -50,7 +54,9 @@ class RecommendationEngine:
         )
         results = results[: max(1, min(limit, 250))]
         return {
-            "profile": profile,
+            "profile": scoring_profile,
+            "input_profile": profile,
+            "profile_adjustments": profile_adjustments,
             "target_sheets": sorted(wanted_sheets),
             "total_matches": len(best_by_uid),
             "returned": len(results),

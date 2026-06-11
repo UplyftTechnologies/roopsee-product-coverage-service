@@ -434,7 +434,7 @@
       <p>
         A lightweight tester for the final product score sheets. It sends the same quiz-style JSON
         that the app will use, returns only products present in the live catalog CSV, and sorts them
-        by the computed match score.
+        by the applicable doctor-sheet score.
       </p>
     </header>
 
@@ -522,7 +522,7 @@
         selectedSkinType: "Oily",
         selectedFaceBodyConcerns: ["Acne", "Dark Spots"],
         selectedLipsEyesConcerns: [],
-        selectedSpecialConditions: ["Pregnant", "Excessive Dryness", "Breastfeeding"],
+        selectedSpecialConditions: ["None"],
         activeTab: "face",
       };
 
@@ -537,6 +537,7 @@
       };
 
       function payload() {
+        sanitizeSpecialState();
         return {
           age: document.querySelector("#ageSelect").value,
           selectedGender: document.querySelector("#genderSelect").value,
@@ -545,6 +546,24 @@
           selectedLipsEyesConcerns: state.selectedLipsEyesConcerns,
           selectedSpecialConditions: state.selectedSpecialConditions,
         };
+      }
+
+      function selectedGender() {
+        return document.querySelector("#genderSelect").value;
+      }
+
+      function availableSpecialConditions() {
+        if (selectedGender() !== "male") return options.specialConditions;
+        return options.specialConditions.filter((item) => item !== "Pregnant" && item !== "Breastfeeding");
+      }
+
+      function sanitizeSpecialState() {
+        const allowed = new Set(availableSpecialConditions());
+        state.selectedSpecialConditions = state.selectedSpecialConditions.filter((item) => allowed.has(item));
+        if (!state.selectedSpecialConditions.length) state.selectedSpecialConditions = ["None"];
+        if (state.selectedSpecialConditions.includes("None") && state.selectedSpecialConditions.length > 1) {
+          state.selectedSpecialConditions = state.selectedSpecialConditions.filter((item) => item !== "None");
+        }
       }
 
       function renderChips(containerId, items, isActive, onClick) {
@@ -569,6 +588,7 @@
       }
 
       function render() {
+        sanitizeSpecialState();
         renderChips("#skinTypeChips", options.skinTypes, (item) => state.selectedSkinType === item, (item) => {
           state.selectedSkinType = item;
         });
@@ -578,7 +598,7 @@
         renderChips("#lipsConcernChips", options.lipsEyesConcerns, (item) => state.selectedLipsEyesConcerns.includes(item), (item) => {
           state.selectedLipsEyesConcerns = toggleMaxTwo(state.selectedLipsEyesConcerns, item);
         });
-        renderChips("#specialChips", options.specialConditions, (item) => state.selectedSpecialConditions.includes(item), (item) => {
+        renderChips("#specialChips", availableSpecialConditions(), (item) => state.selectedSpecialConditions.includes(item), (item) => {
           if (item === "None") {
             state.selectedSpecialConditions = ["None"];
           } else {
@@ -745,7 +765,7 @@
                 return `
                   <tr>
                     <td><span class="status ${band.className}">${band.label}</span></td>
-                    <td>${row.profile.selectedSkinType}; ${[...row.profile.selectedFaceBodyConcerns, ...row.profile.selectedLipsEyesConcerns].join(", ")}; ${row.profile.selectedSpecialConditions.join(", ")}</td>
+                    <td>${row.profile.selectedGender}; ${row.profile.selectedSkinType}; ${[...row.profile.selectedFaceBodyConcerns, ...row.profile.selectedLipsEyesConcerns].join(", ")}; ${row.profile.selectedSpecialConditions.join(", ")}</td>
                     <td>${row.great_or_better_count}</td>
                     <td>${row.good_or_better_count}</td>
                     <td>${row.top_products.map((product) => `${product.product_name} (${product.score})`).join("<br>")}</td>
@@ -765,7 +785,10 @@
         });
       });
       document.querySelector("#ageSelect").addEventListener("change", render);
-      document.querySelector("#genderSelect").addEventListener("change", render);
+      document.querySelector("#genderSelect").addEventListener("change", () => {
+        sanitizeSpecialState();
+        render();
+      });
       document.querySelector("#matchButton").addEventListener("click", recommend);
       document.querySelector("#coverageButton").addEventListener("click", coverage);
       document.querySelector("#scoreFilter").addEventListener("change", renderFilteredProducts);

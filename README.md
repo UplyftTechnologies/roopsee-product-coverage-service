@@ -52,11 +52,11 @@ Input shape:
   "selectedSkinType": "Oily",
   "selectedFaceBodyConcerns": ["Acne", "Dark Spots"],
   "selectedLipsEyesConcerns": [],
-  "selectedSpecialConditions": ["Pregnant", "Excessive Dryness", "Breastfeeding"]
+  "selectedSpecialConditions": ["Excessive Dryness"]
 }
 ```
 
-Returns sorted products with score, label, explanation, price, image, source score sheet, and component scores.
+Returns sorted products with doctor-sheet score, label, explanation, price, image, source score sheet, and component scores.
 
 ### `GET /api/coverage?count=72&top_n=5`
 
@@ -86,6 +86,7 @@ roopsee_coverage/
   engine.py                    # RecommendationEngine orchestration and coverage rows
   loaders.py                   # Workbook and CSV parsers
   models.py                    # ScoreRow dataclass
+  profile_rules.py             # Gender-aware profile sanitization rules
   profiles.py                  # Representative quiz profile generation
   scoring.py                   # Score calculation, summaries, threshold counts
   server.py                    # HTTP routes and static frontend serving
@@ -108,13 +109,16 @@ The notebook uses the same `RecommendationEngine` as the API, so frontend and no
 
 ## Scoring Logic
 
-The service combines:
+The service does not invent weighted or decimal scores. For each product, it reads only the applicable score columns from the doctor workbook:
 
 - age fit score,
 - concern score,
 - skin-type score for face/body products,
-- special-condition safety score,
-- hard cap for pregnancy/breastfeeding conflicts when the sheet marks a product unsafe.
+- special-condition safety score.
+
+The displayed product score is the lowest applicable doctor-sheet score for the selected profile. This keeps the ranking conservative: if a product is weak or unsafe for any selected criterion, it cannot be hidden by a higher score from another column.
+
+If `selectedGender` is `male`, pregnancy and breastfeeding conditions are ignored before scoring and are not generated in representative coverage profiles.
 
 The final ranking is for product coverage testing, not a replacement for doctor review.
 
