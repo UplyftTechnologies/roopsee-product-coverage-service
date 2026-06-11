@@ -17,8 +17,8 @@ from .models import ScoreRow
 from .utils import clean_text, norm_label
 
 
-def age_column(age: str) -> str:
-    return AGE_COLUMN_MAP.get(norm_label(age), "+>25")
+def age_column(age: str) -> str | None:
+    return AGE_COLUMN_MAP.get(norm_label(age))
 
 
 def is_sensitive_profile(profile: dict[str, Any]) -> bool:
@@ -125,8 +125,8 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
     warnings: list[str] = []
 
     age_header = age_column(clean_text(profile.get("age", "")))
-    age_score = row.scores.get(age_header)
-    if age_score is not None:
+    age_score = row.scores.get(age_header) if age_header else None
+    if age_header and age_score is not None:
         components.append({"name": f"Age {age_header}", "score": sheet_score(age_score), "source_column": age_header})
         reasons.append(f"Age fit {age_header}: {age_score:g}")
 

@@ -91,6 +91,7 @@ roopsee_coverage/
   scoring.py                   # Score calculation, summaries, threshold counts
   server.py                    # HTTP routes and static frontend serving
   utils.py                     # Text/UID normalization helpers
+tools/export_profile_coverage_workbook.py
 static/index.html              # Basic frontend tester
 notebooks/profile_score_coverage.ipynb
 ```
@@ -105,7 +106,24 @@ Open `notebooks/profile_score_coverage.ipynb` to generate a profile-by-profile a
 - `60`
 - `50`
 
-The notebook uses the same `RecommendationEngine` as the API, so frontend and notebook numbers stay aligned.
+The notebook uses the same `RecommendationEngine` as the API, so frontend and notebook numbers stay aligned. It uses the full gender-free valid grid, not the 72-profile quick sample.
+
+## Final Coverage Workbook
+
+Generate the final workbook with every valid gender-free profile combination:
+
+```bash
+python tools/export_profile_coverage_workbook.py \
+  --score-workbook "/path/to/Product details and score logic.xlsx" \
+  --products-csv "/path/to/products.csv" \
+  --output "outputs/Roopsee_Full_Profile_Coverage_Final.xlsx"
+```
+
+The export treats `None` as exclusive and allows any combination of the real special conditions: `Excessive Dryness`, `Pregnant`, and `Breastfeeding`. With optional age included, the final valid grid is:
+
+```text
+4 skin types × 4 age states × 72 concern combinations × 8 special-condition combinations = 9,216 rows
+```
 
 ## Scoring Logic
 
