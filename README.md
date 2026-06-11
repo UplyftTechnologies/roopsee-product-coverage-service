@@ -106,7 +106,7 @@ Open `notebooks/profile_score_coverage.ipynb` to generate a profile-by-profile a
 - `60`
 - `50`
 
-The notebook uses the same `RecommendationEngine` as the API, so frontend and notebook numbers stay aligned. It uses the full gender-free valid grid, not the 72-profile quick sample.
+The notebook uses the same `RecommendationEngine` as the API, so frontend and notebook numbers stay aligned. It uses the full gender-free PnC grid, not the 72-profile quick sample.
 
 ## Final Coverage Workbook
 
@@ -119,11 +119,18 @@ python tools/export_profile_coverage_workbook.py \
   --output "outputs/Roopsee_Full_Profile_Coverage_Final.xlsx"
 ```
 
-The export treats `None` as exclusive and allows any combination of the real special conditions: `Excessive Dryness`, `Pregnant`, and `Breastfeeding`. With optional age included, the final valid grid is:
+The export follows this PnC formula:
 
 ```text
-4 skin types × 4 age states × 72 concern combinations × 8 special-condition combinations = 9,216 rows
+4C1 skin profile
+× (2 × (8C1 + 8C2)) concern combinations
+× (3C0 + 3C1 + 3C2 + 3C3 + explicit None) special-condition states
+× 4 age states
+= 4 × 72 × 9 × 4
+= 10,368 rows
 ```
+
+The workbook also includes smaller subsheets for `Skin Concern Type` and `With Special Conditions`.
 
 ## Scoring Logic
 

@@ -8,6 +8,7 @@ from .profile_rules import special_sets_for_gender
 
 OPTIONAL_AGE_LABEL = "Not selected"
 REAL_SPECIAL_CONDITIONS = ["Excessive Dryness", "Pregnant", "Breastfeeding"]
+NO_SPECIAL_SELECTED_LABEL = "No special selected (3C0)"
 
 
 def _choice_sets(items: list[str], min_size: int = 1, max_size: int | None = None) -> list[list[str]]:
@@ -30,8 +31,21 @@ def concern_combinations() -> list[dict[str, list[str] | str]]:
     ]
 
 
+def gender_free_special_states() -> list[dict[str, Any]]:
+    states: list[dict[str, Any]] = [
+        {"special_state": NO_SPECIAL_SELECTED_LABEL, "special_conditions": []}
+    ]
+    for conditions in _choice_sets(REAL_SPECIAL_CONDITIONS):
+        states.append({
+            "special_state": ", ".join(conditions),
+            "special_conditions": conditions,
+        })
+    states.append({"special_state": "None", "special_conditions": ["None"]})
+    return states
+
+
 def gender_free_special_combinations() -> list[list[str]]:
-    return [["None"]] + _choice_sets(REAL_SPECIAL_CONDITIONS)
+    return [state["special_conditions"] for state in gender_free_special_states()]
 
 
 def all_profile_combinations(include_optional_age: bool = True) -> list[dict[str, Any]]:
@@ -40,16 +54,52 @@ def all_profile_combinations(include_optional_age: bool = True) -> list[dict[str
     for skin_type in QUIZ_OPTIONS["skinTypes"]:
         for age in ages:
             for concern_set in concern_combinations():
-                for special_conditions in gender_free_special_combinations():
+                for special_state in gender_free_special_states():
                     profiles.append({
                         "age": age,
                         "selectedGender": "",
                         "selectedSkinType": skin_type,
                         "selectedFaceBodyConcerns": concern_set["face_body_concerns"],
                         "selectedLipsEyesConcerns": concern_set["lips_eyes_concerns"],
-                        "selectedSpecialConditions": special_conditions,
+                        "selectedSpecialConditions": special_state["special_conditions"],
+                        "specialConditionState": special_state["special_state"],
                         "concernGroup": concern_set["concern_group"],
                     })
+    return profiles
+
+
+def skin_concern_type_combinations() -> list[dict[str, Any]]:
+    profiles: list[dict[str, Any]] = []
+    for skin_type in QUIZ_OPTIONS["skinTypes"]:
+        for concern_set in concern_combinations():
+            profiles.append({
+                "age": OPTIONAL_AGE_LABEL,
+                "selectedGender": "",
+                "selectedSkinType": skin_type,
+                "selectedFaceBodyConcerns": concern_set["face_body_concerns"],
+                "selectedLipsEyesConcerns": concern_set["lips_eyes_concerns"],
+                "selectedSpecialConditions": [],
+                "specialConditionState": "Not considered",
+                "concernGroup": concern_set["concern_group"],
+            })
+    return profiles
+
+
+def skin_concern_special_combinations() -> list[dict[str, Any]]:
+    profiles: list[dict[str, Any]] = []
+    for skin_type in QUIZ_OPTIONS["skinTypes"]:
+        for concern_set in concern_combinations():
+            for special_state in gender_free_special_states():
+                profiles.append({
+                    "age": OPTIONAL_AGE_LABEL,
+                    "selectedGender": "",
+                    "selectedSkinType": skin_type,
+                    "selectedFaceBodyConcerns": concern_set["face_body_concerns"],
+                    "selectedLipsEyesConcerns": concern_set["lips_eyes_concerns"],
+                    "selectedSpecialConditions": special_state["special_conditions"],
+                    "specialConditionState": special_state["special_state"],
+                    "concernGroup": concern_set["concern_group"],
+                })
     return profiles
 
 
