@@ -73,8 +73,38 @@ The included frontend is served from `/` and lets you:
 - choose skin type, concerns, special conditions, age, and gender,
 - submit the same JSON shape the app can send,
 - view product cards sorted by score,
+- filter returned products by score band, category, product type, and score sheet,
 - run a representative profile coverage audit,
 - see simple coverage colors: `Good` = green, `Present` = yellow, `Weak` = red.
+
+## Code Structure
+
+```text
+app.py                         # Small service entrypoint
+roopsee_coverage/
+  constants.py                 # Sheet names, quiz options, mappings, thresholds
+  engine.py                    # RecommendationEngine orchestration and coverage rows
+  loaders.py                   # Workbook and CSV parsers
+  models.py                    # ScoreRow dataclass
+  profiles.py                  # Representative quiz profile generation
+  scoring.py                   # Score calculation, summaries, threshold counts
+  server.py                    # HTTP routes and static frontend serving
+  utils.py                     # Text/UID normalization helpers
+static/index.html              # Basic frontend tester
+notebooks/profile_score_coverage.ipynb
+```
+
+## Notebook
+
+Open `notebooks/profile_score_coverage.ipynb` to generate a profile-by-profile audit table. It shows the number of matching products above:
+
+- `90`
+- `80`
+- `70`
+- `60`
+- `50`
+
+The notebook uses the same `RecommendationEngine` as the API, so frontend and notebook numbers stay aligned.
 
 ## Scoring Logic
 

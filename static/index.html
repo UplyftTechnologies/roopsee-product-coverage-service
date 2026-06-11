@@ -203,6 +203,27 @@
         margin-bottom: 18px;
       }
 
+      .filters {
+        display: none;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .filters label {
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .filters select {
+        height: 44px;
+        margin-top: 6px;
+        font-size: 0.9rem;
+      }
+
       .metric {
         background: #fff;
         border: 1px solid var(--line);
@@ -389,6 +410,10 @@
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
+        .filters {
+          grid-template-columns: 1fr;
+        }
+
         .product-card {
           grid-template-columns: 72px minmax(0, 1fr);
         }
@@ -459,6 +484,35 @@
 
       <section class="panel">
         <div class="summary-grid" id="summaryGrid"></div>
+        <div class="filters" id="filters">
+          <label>
+            Score
+            <select id="scoreFilter">
+              <option value="all">All scores</option>
+              <option value="good">Good</option>
+              <option value="present">Present</option>
+              <option value="weak">Weak</option>
+            </select>
+          </label>
+          <label>
+            Category
+            <select id="categoryFilter">
+              <option value="all">All categories</option>
+            </select>
+          </label>
+          <label>
+            Product Type
+            <select id="typeFilter">
+              <option value="all">All types</option>
+            </select>
+          </label>
+          <label>
+            Score Sheet
+            <select id="sheetFilter">
+              <option value="all">All sheets</option>
+            </select>
+          </label>
+        </div>
         <div id="results"></div>
       </section>
     </main>
@@ -471,6 +525,9 @@
         selectedSpecialConditions: ["Pregnant", "Excessive Dryness", "Breastfeeding"],
         activeTab: "face",
       };
+
+      let currentProducts = [];
+      let currentTotalMatches = 0;
 
       const options = {
         skinTypes: ["Oily", "Dry", "Normal", "Combination"],
@@ -550,14 +607,58 @@
         return { label: "Weak", className: "Weak" };
       }
 
-      function renderSummary(response) {
-        const products = response.products || [];
+      function renderProductSummary(products) {
         document.querySelector("#summaryGrid").innerHTML = [
-          metric("Matches", response.total_matches),
+          metric("Matches", `${products.length}/${currentTotalMatches}`),
           metric("Good", products.filter((product) => product.score >= 80).length),
           metric("Present", products.filter((product) => product.score >= 60 && product.score < 80).length),
           metric("Weak", products.filter((product) => product.score < 60).length),
         ].join("");
+      }
+
+      function uniqueValues(products, field) {
+        return [...new Set(products.map((product) => product[field]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      }
+
+      function fillFilter(selectId, values, allLabel) {
+        const select = document.querySelector(selectId);
+        const previous = select.value;
+        select.innerHTML = `<option value="all">${allLabel}</option>`;
+        values.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        });
+        select.value = values.includes(previous) ? previous : "all";
+      }
+
+      function populateFilters(products) {
+        fillFilter("#categoryFilter", uniqueValues(products, "category"), "All categories");
+        fillFilter("#typeFilter", uniqueValues(products, "product_type"), "All types");
+        fillFilter("#sheetFilter", uniqueValues(products, "source_sheet"), "All sheets");
+      }
+
+      function filterProducts(products) {
+        const scoreFilter = document.querySelector("#scoreFilter").value;
+        const categoryFilter = document.querySelector("#categoryFilter").value;
+        const typeFilter = document.querySelector("#typeFilter").value;
+        const sheetFilter = document.querySelector("#sheetFilter").value;
+
+        return products.filter((product) => {
+          const band = scoreBand(product.score).className;
+          if (scoreFilter !== "all" && band !== scoreFilter) return false;
+          if (categoryFilter !== "all" && product.category !== categoryFilter) return false;
+          if (typeFilter !== "all" && product.product_type !== typeFilter) return false;
+          if (sheetFilter !== "all" && product.source_sheet !== sheetFilter) return false;
+          return true;
+        });
+      }
+
+      function renderFilteredProducts() {
+        const products = filterProducts(currentProducts);
+        renderProductSummary(products);
+        renderProducts(products);
       }
 
       function productImage(product) {
@@ -600,17 +701,21 @@
       }
 
       async function recommend() {
+        document.querySelector("#filters").style.display = "grid";
         document.querySelector("#results").innerHTML = `<div class="empty">Calculating product matches...</div>`;
         const response = await fetch("/api/recommend?limit=40", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload()),
         }).then((res) => res.json());
-        renderSummary(response);
-        renderProducts(response.products || []);
+        currentProducts = response.products || [];
+        currentTotalMatches = response.total_matches || currentProducts.length;
+        populateFilters(currentProducts);
+        renderFilteredProducts();
       }
 
       async function coverage() {
+        document.querySelector("#filters").style.display = "none";
         document.querySelector("#results").innerHTML = `<div class="empty">Running representative profile audit...</div>`;
         const response = await fetch("/api/coverage?count=72&top_n=3").then((res) => res.json());
         document.querySelector("#summaryGrid").innerHTML = [
@@ -663,6 +768,10 @@
       document.querySelector("#genderSelect").addEventListener("change", render);
       document.querySelector("#matchButton").addEventListener("click", recommend);
       document.querySelector("#coverageButton").addEventListener("click", coverage);
+      document.querySelector("#scoreFilter").addEventListener("change", renderFilteredProducts);
+      document.querySelector("#categoryFilter").addEventListener("change", renderFilteredProducts);
+      document.querySelector("#typeFilter").addEventListener("change", renderFilteredProducts);
+      document.querySelector("#sheetFilter").addEventListener("change", renderFilteredProducts);
 
       render();
       recommend();

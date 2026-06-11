@@ -1,0 +1,95 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+
+PACKAGE_DIR = Path(__file__).resolve().parent
+BASE_DIR = PACKAGE_DIR.parent
+STATIC_DIR = BASE_DIR / "static"
+
+DEFAULT_SCORE_WORKBOOK = str(BASE_DIR / "data" / "Product details and score logic.xlsx")
+DEFAULT_PRODUCTS_CSV = str(BASE_DIR / "data" / "products.csv")
+
+FACE_SHEET = "Face and body"
+LIPS_SHEET = "Lips"
+EYES_SHEET = "Eyes"
+
+QUIZ_OPTIONS = {
+    "skinTypes": ["Oily", "Dry", "Normal", "Combination"],
+    "faceBodyConcerns": [
+        "Acne",
+        "Pigmentation",
+        "Dryness",
+        "Dark Spots",
+        "Aging",
+        "Sensitivity",
+        "Large Pores",
+        "Dullness",
+    ],
+    "lipsEyesConcerns": [
+        "Dark circles",
+        "Puffiness",
+        "Dry Under Eye",
+        "Sensitive Eye",
+        "Chapped Lips",
+        "Lip Pigment",
+        "Dull Lips",
+        "Dehydrated Lips",
+    ],
+    "specialConditions": ["Excessive Dryness", "Pregnant", "Breastfeeding", "None"],
+    "ages": ["Under 16", "17-25", "Above 25"],
+    "genders": ["male", "female", "other", "prefer not to say"],
+}
+
+AGE_COLUMN_MAP = {
+    "under 16": "<16",
+    "below 16": "<16",
+    "<16": "<16",
+    "16": "<16",
+    "17-25": "17-25",
+    "17 - 25": "17-25",
+    "17 25": "17-25",
+    "above 25": "+>25",
+    "over 25": "+>25",
+    "25+": "+>25",
+    "+>25": "+>25",
+}
+
+FACE_CONCERN_MAP = {
+    "acne": ["Acne", "Comedones", "Body Acne"],
+    "pigmentation": ["Dark Spots/Pigmentation", "Uneven Skin Tone", "Melasma"],
+    "dryness": ["Dryness", "Dehydration", "Barrier Repair"],
+    "dark spots": ["Dark Spots/Pigmentation", "Melasma", "Uneven Skin Tone"],
+    "aging": ["Wrinkles/Fine lines"],
+    "sensitivity": ["Redness/Irritation"],
+    "large pores": ["Open Pores"],
+    "dullness": ["Dullness", "Uneven Skin Tone"],
+}
+
+LIP_CONCERN_MAP = {
+    "chapped lips": ["Dry Lips/Chapped Lips"],
+    "dry lips": ["Dry Lips/Chapped Lips"],
+    "lip pigment": ["Lip Pigmentation"],
+    "lip pigmentation": ["Lip Pigmentation"],
+    "dull lips": ["Dull Looking lips"],
+    "dehydrated lips": ["Dehydrated Lips"],
+}
+
+EYE_CONCERN_MAP = {
+    "dark circles": ["Dark circles"],
+    "puffiness": ["Puffiness/Eye Bags"],
+    "dry under eye": ["Dry/Dehydrated Under Eyes"],
+    "dry under eyes": ["Dry/Dehydrated Under Eyes"],
+    "sensitive eye": ["Sensitive/Irritated Eye area"],
+    "sensitive eyes": ["Sensitive/Irritated Eye area"],
+}
+
+SCORE_LABELS = [
+    (90, "Excellent Match"),
+    (80, "Great Match"),
+    (70, "Good Match"),
+    (50, "Fits with Caution"),
+    (-999, "Not Recommended"),
+]
+
+THRESHOLDS = [90, 80, 70, 60, 50]
