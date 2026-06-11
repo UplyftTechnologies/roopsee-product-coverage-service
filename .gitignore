@@ -1,0 +1,15 @@
+.DS_Store
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Local operational data. Pass paths with env vars instead.
+data/*.xlsx
+data/*.csv
+*.xlsx
+*.csv
+
+# Local environment files.
+.env
+.env.local

@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Roopsee Product Coverage Tester</title>
+    <style>
+      :root {
+        --ink: #3e3342;
+        --muted: #766b7d;
+        --line: #e4dce6;
+        --soft: #faf7f3;
+        --panel: #fffdfb;
+        --rose: #c255a8;
+        --rose-dark: #9d3f84;
+        --rose-soft: #f3e4ee;
+        --green: #1f8a57;
+        --amber: #b7791f;
+        --red: #b83232;
+        --shadow: 0 18px 50px rgba(83, 66, 78, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(194, 85, 168, 0.12), transparent 28rem),
+          linear-gradient(135deg, #fffaf5 0%, #f8f2f8 52%, #fff9f0 100%);
+        color: var(--ink);
+        font-family: ui-rounded, "Avenir Next", "Nunito Sans", "Trebuchet MS", sans-serif;
+      }
+
+      header {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 38px 20px 18px;
+      }
+
+      h1 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(2rem, 5vw, 4.6rem);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+      }
+
+      header p {
+        max-width: 720px;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.55;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+        gap: 22px;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 20px 48px;
+      }
+
+      .panel {
+        background: rgba(255, 253, 251, 0.9);
+        border: 1px solid rgba(228, 220, 230, 0.9);
+        border-radius: 30px;
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      .sticky {
+        position: static;
+        align-self: start;
+      }
+
+      .section-title {
+        margin: 4px 0 12px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 900;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+
+      .chips {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .chip {
+        border: 2px solid var(--line);
+        background: #fff;
+        color: #5f5267;
+        border-radius: 16px;
+        min-height: 50px;
+        padding: 10px 14px;
+        font: inherit;
+        font-weight: 750;
+        text-align: left;
+        cursor: pointer;
+        transition: 160ms ease;
+      }
+
+      .chip:hover {
+        transform: translateY(-1px);
+        border-color: rgba(194, 85, 168, 0.45);
+      }
+
+      .chip.active {
+        background: var(--rose-soft);
+        border-color: var(--rose);
+        color: var(--ink);
+      }
+
+      .tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 2px solid #ebb9db;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+
+      .tab {
+        border: 0;
+        padding: 13px;
+        background: #fff;
+        color: #9a8da2;
+        font: inherit;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .tab.active {
+        background: var(--rose);
+        color: white;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      select {
+        width: 100%;
+        height: 52px;
+        border-radius: 16px;
+        border: 2px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+        padding: 0 14px;
+        font: inherit;
+        font-weight: 800;
+      }
+
+      .actions {
+        display: grid;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      button.primary,
+      button.secondary {
+        min-height: 54px;
+        border-radius: 999px;
+        font: inherit;
+        font-weight: 950;
+        cursor: pointer;
+      }
+
+      button.primary {
+        border: 0;
+        background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+        color: white;
+      }
+
+      button.secondary {
+        border: 2px solid var(--rose);
+        background: transparent;
+        color: var(--rose-dark);
+      }
+
+      .json-box {
+        margin-top: 16px;
+        background: #2d2530;
+        color: #f8e9f5;
+        border-radius: 18px;
+        padding: 14px;
+        overflow: auto;
+        font: 0.78rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .metric {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 14px;
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 1.7rem;
+        line-height: 1;
+      }
+
+      .metric span {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .product-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .product-card {
+        display: grid;
+        grid-template-columns: 86px minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 12px;
+      }
+
+      .product-card img,
+      .image-fallback {
+        width: 86px;
+        height: 86px;
+        border-radius: 18px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #f0dfeb, #fff5e9);
+      }
+
+      .image-fallback {
+        display: grid;
+        place-items: center;
+        color: var(--rose);
+        font-weight: 900;
+      }
+
+      .product-card h3 {
+        margin: 0 0 4px;
+        font-size: 1rem;
+      }
+
+      .product-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.38;
+      }
+
+      .score {
+        width: 76px;
+        height: 76px;
+        display: grid;
+        place-items: center;
+        align-content: center;
+        border-radius: 50%;
+        font-size: 1.16rem;
+        font-weight: 1000;
+      }
+
+      .score strong,
+      .score span {
+        display: block;
+        line-height: 1;
+      }
+
+      .score span {
+        margin-top: 5px;
+        font-size: 0.62rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .score-good {
+        background: #e5f6ee;
+        color: var(--green);
+      }
+
+      .score-present {
+        background: #fff4d6;
+        color: var(--amber);
+      }
+
+      .score-weak {
+        background: #ffe4e4;
+        color: var(--red);
+      }
+
+      .tagline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .tag {
+        border-radius: 999px;
+        background: #f6f0f7;
+        color: #695b70;
+        padding: 5px 8px;
+        font-size: 0.72rem;
+        font-weight: 850;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border-radius: 18px;
+        background: #fff;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px;
+        text-align: left;
+        vertical-align: top;
+        font-size: 0.85rem;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .status {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 4px 9px;
+        font-weight: 900;
+      }
+
+      .Good {
+        background: #e5f6ee;
+        color: var(--green);
+      }
+
+      .Present {
+        background: #fff4d6;
+        color: var(--amber);
+      }
+
+      .Weak {
+        background: #ffe4e4;
+        color: var(--red);
+      }
+
+      .empty {
+        color: var(--muted);
+        padding: 28px;
+        text-align: center;
+        border: 1px dashed var(--line);
+        border-radius: 22px;
+      }
+
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        .sticky {
+          position: static;
+        }
+
+        .summary-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .product-card {
+          grid-template-columns: 72px minmax(0, 1fr);
+        }
+
+        .score {
+          grid-column: 1 / -1;
+          width: 100%;
+          height: auto;
+          border-radius: 16px;
+          padding: 9px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Roopsee Match Lab</h1>
+      <p>
+        A lightweight tester for the final product score sheets. It sends the same quiz-style JSON
+        that the app will use, returns only products present in the live catalog CSV, and sorts them
+        by the computed match score.
+      </p>
+    </header>
+
+    <main>
+      <section class="panel sticky">
+        <div class="section-title">Skin Type *</div>
+        <div class="chips" id="skinTypeChips"></div>
+
+        <div class="section-title">Skin Concerns (Max 2) *</div>
+        <div class="tabs">
+          <button class="tab active" data-tab="face">Face & Body</button>
+          <button class="tab" data-tab="lips">Lips & Eyes</button>
+        </div>
+        <div class="chips" id="faceConcernChips"></div>
+        <div class="chips" id="lipsConcernChips" style="display: none"></div>
+
+        <div class="section-title">Special Conditions *</div>
+        <div class="chips" id="specialChips"></div>
+
+        <div class="row">
+          <div>
+            <div class="section-title">Age</div>
+            <select id="ageSelect">
+              <option>Under 16</option>
+              <option>17-25</option>
+              <option>Above 25</option>
+            </select>
+          </div>
+          <div>
+            <div class="section-title">Gender</div>
+            <select id="genderSelect">
+              <option>male</option>
+              <option>female</option>
+              <option>other</option>
+              <option>prefer not to say</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="matchButton">Get Sorted Products</button>
+          <button class="secondary" id="coverageButton">Run Representative Coverage</button>
+        </div>
+
+        <pre class="json-box" id="payloadPreview"></pre>
+      </section>
+
+      <section class="panel">
+        <div class="summary-grid" id="summaryGrid"></div>
+        <div id="results"></div>
+      </section>
+    </main>
+
+    <script>
+      const state = {
+        selectedSkinType: "Oily",
+        selectedFaceBodyConcerns: ["Acne", "Dark Spots"],
+        selectedLipsEyesConcerns: [],
+        selectedSpecialConditions: ["Pregnant", "Excessive Dryness", "Breastfeeding"],
+        activeTab: "face",
+      };
+
+      const options = {
+        skinTypes: ["Oily", "Dry", "Normal", "Combination"],
+        faceBodyConcerns: ["Acne", "Pigmentation", "Dryness", "Dark Spots", "Aging", "Sensitivity", "Large Pores", "Dullness"],
+        lipsEyesConcerns: ["Dark circles", "Puffiness", "Dry Under Eye", "Sensitive Eye", "Chapped Lips", "Lip Pigment", "Dull Lips", "Dehydrated Lips"],
+        specialConditions: ["Excessive Dryness", "Pregnant", "Breastfeeding", "None"],
+      };
+
+      function payload() {
+        return {
+          age: document.querySelector("#ageSelect").value,
+          selectedGender: document.querySelector("#genderSelect").value,
+          selectedSkinType: state.selectedSkinType,
+          selectedFaceBodyConcerns: state.selectedFaceBodyConcerns,
+          selectedLipsEyesConcerns: state.selectedLipsEyesConcerns,
+          selectedSpecialConditions: state.selectedSpecialConditions,
+        };
+      }
+
+      function renderChips(containerId, items, isActive, onClick) {
+        const container = document.querySelector(containerId);
+        container.innerHTML = "";
+        for (const item of items) {
+          const button = document.createElement("button");
+          button.className = `chip ${isActive(item) ? "active" : ""}`;
+          button.textContent = item;
+          button.addEventListener("click", () => {
+            onClick(item);
+            render();
+          });
+          container.appendChild(button);
+        }
+      }
+
+      function toggleMaxTwo(list, item) {
+        const index = list.indexOf(item);
+        if (index >= 0) return list.filter((value) => value !== item);
+        return [...list, item].slice(-2);
+      }
+
+      function render() {
+        renderChips("#skinTypeChips", options.skinTypes, (item) => state.selectedSkinType === item, (item) => {
+          state.selectedSkinType = item;
+        });
+        renderChips("#faceConcernChips", options.faceBodyConcerns, (item) => state.selectedFaceBodyConcerns.includes(item), (item) => {
+          state.selectedFaceBodyConcerns = toggleMaxTwo(state.selectedFaceBodyConcerns, item);
+        });
+        renderChips("#lipsConcernChips", options.lipsEyesConcerns, (item) => state.selectedLipsEyesConcerns.includes(item), (item) => {
+          state.selectedLipsEyesConcerns = toggleMaxTwo(state.selectedLipsEyesConcerns, item);
+        });
+        renderChips("#specialChips", options.specialConditions, (item) => state.selectedSpecialConditions.includes(item), (item) => {
+          if (item === "None") {
+            state.selectedSpecialConditions = ["None"];
+          } else {
+            const next = toggleMaxTwo(state.selectedSpecialConditions.filter((value) => value !== "None"), item);
+            state.selectedSpecialConditions = next.length ? next : ["None"];
+          }
+        });
+        document.querySelector("#faceConcernChips").style.display = state.activeTab === "face" ? "grid" : "none";
+        document.querySelector("#lipsConcernChips").style.display = state.activeTab === "lips" ? "grid" : "none";
+        document.querySelector("#payloadPreview").textContent = JSON.stringify(payload(), null, 2);
+      }
+
+      function metric(label, value) {
+        return `<div class="metric"><strong>${value ?? "-"}</strong><span>${label}</span></div>`;
+      }
+
+      function scoreBand(score) {
+        if (score >= 80) return { label: "Good", className: "good" };
+        if (score >= 60) return { label: "Present", className: "present" };
+        return { label: "Weak", className: "weak" };
+      }
+
+      function coverageBand(status) {
+        if (status === "Strong") return { label: "Good", className: "Good" };
+        if (status === "Usable" || status === "Limited but usable") return { label: "Present", className: "Present" };
+        return { label: "Weak", className: "Weak" };
+      }
+
+      function renderSummary(response) {
+        const products = response.products || [];
+        document.querySelector("#summaryGrid").innerHTML = [
+          metric("Matches", response.total_matches),
+          metric("Good", products.filter((product) => product.score >= 80).length),
+          metric("Present", products.filter((product) => product.score >= 60 && product.score < 80).length),
+          metric("Weak", products.filter((product) => product.score < 60).length),
+        ].join("");
+      }
+
+      function productImage(product) {
+        if (!product.image) return `<div class="image-fallback">R</div>`;
+        return `<img src="${product.image}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'image-fallback',textContent:'R'}))" />`;
+      }
+
+      function renderProducts(products) {
+        if (!products.length) {
+          document.querySelector("#results").innerHTML = `<div class="empty">No matching catalog products found for this profile.</div>`;
+          return;
+        }
+        document.querySelector("#results").innerHTML = `
+          <div class="product-grid">
+            ${products.map((product) => {
+              const band = scoreBand(product.score);
+              return `
+                <article class="product-card">
+                  ${productImage(product)}
+                  <div>
+                    <h3>${product.product_name}</h3>
+                    <p>${product.brand_name} · ${product.category} · ${product.product_type} · ${product.size || "Size unavailable"}</p>
+                    <p>${product.explanation}</p>
+                    <div class="tagline">
+                      <span class="tag">${band.label}</span>
+                      <span class="tag">${product.source_sheet}</span>
+                      <span class="tag">${product.when_to_use || "Routine"}</span>
+                      <span class="tag">₹${product.selling_price || product.mrp || "-"}</span>
+                    </div>
+                  </div>
+                  <div class="score score-${band.className}">
+                    <strong>${product.score}</strong>
+                    <span>${band.label}</span>
+                  </div>
+                </article>
+              `;
+            }).join("")}
+          </div>
+        `;
+      }
+
+      async function recommend() {
+        document.querySelector("#results").innerHTML = `<div class="empty">Calculating product matches...</div>`;
+        const response = await fetch("/api/recommend?limit=40", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload()),
+        }).then((res) => res.json());
+        renderSummary(response);
+        renderProducts(response.products || []);
+      }
+
+      async function coverage() {
+        document.querySelector("#results").innerHTML = `<div class="empty">Running representative profile audit...</div>`;
+        const response = await fetch("/api/coverage?count=72&top_n=3").then((res) => res.json());
+        document.querySelector("#summaryGrid").innerHTML = [
+          metric("Profiles", response.profile_count),
+          metric("Good", response.status_counts?.Strong || 0),
+          metric("Present", (response.status_counts?.Usable || 0) + (response.status_counts?.["Limited but usable"] || 0)),
+          metric("Weak", response.status_counts?.["Coverage gap"] || 0),
+        ].join("");
+        const sorted = [...(response.rows || [])].sort((a, b) => {
+          const order = { "Coverage gap": 0, "Limited but usable": 1, Usable: 2, Strong: 3 };
+          return (order[a.status] ?? 9) - (order[b.status] ?? 9);
+        });
+        document.querySelector("#results").innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Profile</th>
+                <th>Good Products</th>
+                <th>Present+ Products</th>
+                <th>Top Products</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sorted.slice(0, 24).map((row) => {
+                const band = coverageBand(row.status);
+                return `
+                  <tr>
+                    <td><span class="status ${band.className}">${band.label}</span></td>
+                    <td>${row.profile.selectedSkinType}; ${[...row.profile.selectedFaceBodyConcerns, ...row.profile.selectedLipsEyesConcerns].join(", ")}; ${row.profile.selectedSpecialConditions.join(", ")}</td>
+                    <td>${row.great_or_better_count}</td>
+                    <td>${row.good_or_better_count}</td>
+                    <td>${row.top_products.map((product) => `${product.product_name} (${product.score})`).join("<br>")}</td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      document.querySelectorAll(".tab").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.activeTab = button.dataset.tab;
+          document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab === button));
+          render();
+        });
+      });
+      document.querySelector("#ageSelect").addEventListener("change", render);
+      document.querySelector("#genderSelect").addEventListener("change", render);
+      document.querySelector("#matchButton").addEventListener("click", recommend);
+      document.querySelector("#coverageButton").addEventListener("click", coverage);
+
+      render();
+      recommend();
+    </script>
+  </body>
+</html>
