@@ -100,10 +100,11 @@ class RecommendationEngine:
             response = self.recommend(profile, limit=250)
             summary = response["summary"]
             counts = threshold_counts(response["products"], THRESHOLDS)
-            status = coverage_status(profile, summary)
+            status = coverage_status(response["profile"], summary)
             rows.append({
                 "profile_id": f"profile_{index:03d}",
                 "profile": profile,
+                "scoring_profile": response["profile"],
                 "status": status,
                 "total_matches": response["total_matches"],
                 "excellent_count": summary["excellent_count"],

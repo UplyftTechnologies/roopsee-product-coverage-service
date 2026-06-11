@@ -10,7 +10,60 @@ from urllib.parse import parse_qs, urlparse
 
 from .constants import DEFAULT_PRODUCTS_CSV, DEFAULT_SCORE_WORKBOOK, QUIZ_OPTIONS, STATIC_DIR
 from .engine import RecommendationEngine
-from .profiles import representative_profiles
+from .profiles import (
+    all_profile_combinations,
+    skin_concern_special_combinations,
+    skin_concern_type_combinations,
+    representative_profiles,
+)
+
+
+COVERAGE_MODES = {
+    "all_pnc": {
+        "label": "All PnC Combinations",
+        "description": "4C1 * (2 * (8C1 + 8C2)) * (3C0 + 3C1 + 3C2 + 3C3 + None) * 4",
+        "formula": "4 * 72 * 9 * 4 = 10,368",
+    },
+    "skin_concern_type": {
+        "label": "Skin Concern Type",
+        "description": "Skin type plus concern group/set; age and special conditions not selected.",
+        "formula": "4 * 72 = 288",
+    },
+    "with_special_conditions": {
+        "label": "With Special Conditions",
+        "description": "Skin type plus concern group/set plus special-condition state; age not selected.",
+        "formula": "4 * 72 * 9 = 2,592",
+    },
+    "representative": {
+        "label": "Quick Representative Sample",
+        "description": "Small fast sample for smoke testing only.",
+        "formula": "72 sampled profiles",
+    },
+}
+
+
+def profiles_for_mode(mode: str, count: int | None = None) -> list[dict[str, Any]]:
+    if mode == "skin_concern_type":
+        return skin_concern_type_combinations()
+    if mode == "with_special_conditions":
+        return skin_concern_special_combinations()
+    if mode == "representative":
+        return representative_profiles(count or 72)
+    return all_profile_combinations(include_optional_age=True)
+
+
+def limit_coverage_rows(payload: dict[str, Any], row_limit: int = 0) -> dict[str, Any]:
+    rows = payload.get("rows") or []
+    order = {"Coverage gap": 0, "Limited but usable": 1, "Usable": 2, "Strong": 3}
+    sorted_rows = sorted(rows, key=lambda row: (order.get(row.get("status"), 9), row.get("profile_id", "")))
+    payload["total_rows"] = len(rows)
+    if row_limit > 0:
+        payload["rows"] = sorted_rows[:row_limit]
+        payload["returned_rows"] = len(payload["rows"])
+    else:
+        payload["rows"] = sorted_rows
+        payload["returned_rows"] = len(sorted_rows)
+    return payload
 
 
 def read_request_json(handler: BaseHTTPRequestHandler) -> dict[str, Any]:
@@ -60,15 +113,22 @@ def make_handler(engine: RecommendationEngine):
                 elif parsed.path == "/api/health":
                     send_json(self, engine.health())
                 elif parsed.path == "/api/options":
-                    payload = {"quiz_options": QUIZ_OPTIONS, "health": engine.health()}
+                    payload = {"quiz_options": QUIZ_OPTIONS, "coverage_modes": COVERAGE_MODES, "health": engine.health()}
                     send_json(self, payload)
                 elif parsed.path == "/api/representative-profiles":
                     count = int(query.get("count", ["72"])[0])
                     send_json(self, {"profiles": representative_profiles(count)})
                 elif parsed.path == "/api/coverage":
+                    mode = query.get("mode", ["all_pnc"])[0]
                     count = int(query.get("count", ["72"])[0])
                     top_n = int(query.get("top_n", ["5"])[0])
-                    send_json(self, engine.coverage(representative_profiles(count), top_n=top_n))
+                    row_limit = int(query.get("row_limit", ["0"])[0])
+                    profiles = profiles_for_mode(mode, count=count)
+                    payload = engine.coverage(profiles, top_n=top_n)
+                    payload["mode"] = mode
+                    payload["mode_meta"] = COVERAGE_MODES.get(mode, COVERAGE_MODES["all_pnc"])
+                    payload = limit_coverage_rows(payload, row_limit=row_limit)
+                    send_json(self, payload)
                 else:
                     requested = (STATIC_DIR / parsed.path.lstrip("/")).resolve()
                     if STATIC_DIR in requested.parents:
@@ -87,9 +147,15 @@ def make_handler(engine: RecommendationEngine):
                     limit = int(query.get("limit", [str(body.get("limit", 60))])[0])
                     send_json(self, engine.recommend(body, limit=limit))
                 elif parsed.path == "/api/coverage":
-                    profiles = body.get("profiles") or representative_profiles(int(body.get("count", 72)))
+                    mode = body.get("mode", "all_pnc")
+                    profiles = body.get("profiles") or profiles_for_mode(mode, count=int(body.get("count", 72)))
                     top_n = int(body.get("top_n", 5))
-                    send_json(self, engine.coverage(profiles, top_n=top_n))
+                    row_limit = int(body.get("row_limit", 0))
+                    payload = engine.coverage(profiles, top_n=top_n)
+                    payload["mode"] = mode
+                    payload["mode_meta"] = COVERAGE_MODES.get(mode, COVERAGE_MODES["all_pnc"])
+                    payload = limit_coverage_rows(payload, row_limit=row_limit)
+                    send_json(self, payload)
                 else:
                     self.send_error(HTTPStatus.NOT_FOUND)
             except Exception as exc:  # noqa: BLE001

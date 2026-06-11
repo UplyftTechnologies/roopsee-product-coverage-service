@@ -165,6 +165,17 @@
         margin-top: 20px;
       }
 
+      .coverage-picker {
+        margin-top: 18px;
+      }
+
+      .hint {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.4;
+      }
+
       button.primary,
       button.secondary {
         min-height: 54px;
@@ -476,7 +487,19 @@
 
         <div class="actions">
           <button class="primary" id="matchButton">Get Sorted Products</button>
-          <button class="secondary" id="coverageButton">Run Representative Coverage</button>
+          <div class="coverage-picker">
+            <div class="section-title">Coverage Mode</div>
+            <select id="coverageMode">
+              <option value="all_pnc">All PnC Combinations</option>
+              <option value="skin_concern_type">Skin Concern Type</option>
+              <option value="with_special_conditions">With Special Conditions</option>
+              <option value="representative">Quick Representative Sample</option>
+            </select>
+            <p class="hint" id="coverageHint">
+              4C1 × (2 × (8C1 + 8C2)) × (3C0 + 3C1 + 3C2 + 3C3 + None) × 4 = 10,368 rows.
+            </p>
+          </div>
+          <button class="secondary" id="coverageButton">Run Coverage Audit</button>
         </div>
 
         <pre class="json-box" id="payloadPreview"></pre>
@@ -528,6 +551,13 @@
 
       let currentProducts = [];
       let currentTotalMatches = 0;
+
+      const coverageModes = {
+        all_pnc: "4C1 × (2 × (8C1 + 8C2)) × (3C0 + 3C1 + 3C2 + 3C3 + None) × 4 = 10,368 rows.",
+        skin_concern_type: "Skin type + concern group/set only: 4 × 72 = 288 rows.",
+        with_special_conditions: "Skin type + concern group/set + special state: 4 × 72 × 9 = 2,592 rows.",
+        representative: "Fast smoke-test sample only: 72 rows.",
+      };
 
       const options = {
         skinTypes: ["Oily", "Dry", "Normal", "Combination"],
@@ -613,6 +643,15 @@
 
       function metric(label, value) {
         return `<div class="metric"><strong>${value ?? "-"}</strong><span>${label}</span></div>`;
+      }
+
+      function formatNumber(value) {
+        return Number(value || 0).toLocaleString("en-IN");
+      }
+
+      function updateCoverageHint() {
+        const mode = document.querySelector("#coverageMode").value;
+        document.querySelector("#coverageHint").textContent = coverageModes[mode] || coverageModes.all_pnc;
       }
 
       function scoreBand(score) {
@@ -736,36 +775,47 @@
 
       async function coverage() {
         document.querySelector("#filters").style.display = "none";
-        document.querySelector("#results").innerHTML = `<div class="empty">Running representative profile audit...</div>`;
-        const response = await fetch("/api/coverage?count=72&top_n=3").then((res) => res.json());
+        const mode = document.querySelector("#coverageMode").value;
+        updateCoverageHint();
+        document.querySelector("#results").innerHTML = `<div class="empty">Running ${coverageModes[mode] || "coverage audit"}...</div>`;
+        const response = await fetch(`/api/coverage?mode=${encodeURIComponent(mode)}&top_n=3&row_limit=50`).then((res) => res.json());
         document.querySelector("#summaryGrid").innerHTML = [
-          metric("Profiles", response.profile_count),
-          metric("Good", response.status_counts?.Strong || 0),
-          metric("Present", (response.status_counts?.Usable || 0) + (response.status_counts?.["Limited but usable"] || 0)),
-          metric("Weak", response.status_counts?.["Coverage gap"] || 0),
+          metric("Profiles", formatNumber(response.profile_count)),
+          metric("Good", formatNumber(response.status_counts?.Strong)),
+          metric("Present", formatNumber((response.status_counts?.Usable || 0) + (response.status_counts?.["Limited but usable"] || 0))),
+          metric("Weak", formatNumber(response.status_counts?.["Coverage gap"])),
         ].join("");
-        const sorted = [...(response.rows || [])].sort((a, b) => {
-          const order = { "Coverage gap": 0, "Limited but usable": 1, Usable: 2, Strong: 3 };
-          return (order[a.status] ?? 9) - (order[b.status] ?? 9);
-        });
+        const visibleRows = response.rows || [];
         document.querySelector("#results").innerHTML = `
+          <div class="empty">
+            <strong>${response.mode_meta?.label || "Coverage Audit"}</strong><br />
+            ${response.mode_meta?.formula || coverageModes[mode] || ""}<br />
+            Showing weakest ${formatNumber(response.returned_rows || visibleRows.length)} of ${formatNumber(response.total_rows || response.profile_count)} calculated rows.
+          </div>
           <table>
             <thead>
               <tr>
                 <th>Status</th>
                 <th>Profile</th>
+                <th>Special State</th>
                 <th>Good Products</th>
                 <th>Present+ Products</th>
                 <th>Top Products</th>
               </tr>
             </thead>
             <tbody>
-              ${sorted.slice(0, 24).map((row) => {
+              ${visibleRows.map((row) => {
                 const band = coverageBand(row.status);
+                const profile = row.profile || {};
+                const scoringProfile = row.scoring_profile || profile;
+                const concerns = [...(profile.selectedFaceBodyConcerns || []), ...(profile.selectedLipsEyesConcerns || [])].join(", ");
+                const specialState = profile.specialConditionState || (profile.selectedSpecialConditions || []).join(", ") || "None";
+                const scoringSpecial = (scoringProfile.selectedSpecialConditions || []).join(", ") || "None";
                 return `
                   <tr>
                     <td><span class="status ${band.className}">${band.label}</span></td>
-                    <td>${row.profile.selectedGender}; ${row.profile.selectedSkinType}; ${[...row.profile.selectedFaceBodyConcerns, ...row.profile.selectedLipsEyesConcerns].join(", ")}; ${row.profile.selectedSpecialConditions.join(", ")}</td>
+                    <td>${profile.selectedSkinType}; ${profile.age}; ${profile.concernGroup || ""}; ${concerns}</td>
+                    <td>${specialState}<br><small>Scored as: ${scoringSpecial}</small></td>
                     <td>${row.great_or_better_count}</td>
                     <td>${row.good_or_better_count}</td>
                     <td>${row.top_products.map((product) => `${product.product_name} (${product.score})`).join("<br>")}</td>
@@ -789,6 +839,7 @@
         sanitizeSpecialState();
         render();
       });
+      document.querySelector("#coverageMode").addEventListener("change", updateCoverageHint);
       document.querySelector("#matchButton").addEventListener("click", recommend);
       document.querySelector("#coverageButton").addEventListener("click", coverage);
       document.querySelector("#scoreFilter").addEventListener("change", renderFilteredProducts);
@@ -797,6 +848,7 @@
       document.querySelector("#sheetFilter").addEventListener("change", renderFilteredProducts);
 
       render();
+      updateCoverageHint();
       recommend();
     </script>
   </body>

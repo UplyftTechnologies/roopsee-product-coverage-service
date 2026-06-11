@@ -58,9 +58,16 @@ Input shape:
 
 Returns sorted products with doctor-sheet score, label, explanation, price, image, source score sheet, and component scores.
 
-### `GET /api/coverage?count=72&top_n=5`
+### `GET /api/coverage?mode=all_pnc&top_n=3`
 
-Generates representative quiz profiles and reports whether each profile has enough high-scoring catalog products.
+Runs the coverage audit for one of the supported modes:
+
+- `all_pnc`: `10,368` rows using the final PnC formula.
+- `skin_concern_type`: `288` rows for skin type plus concern group/set.
+- `with_special_conditions`: `2,592` rows for skin type plus concern group/set plus special-condition state.
+- `representative`: `72` rows for quick smoke testing only.
+
+Use `row_limit=50` to calculate full summary counts but return only the weakest rows needed for the app preview.
 
 ### `GET /api/health`
 
@@ -74,7 +81,7 @@ The included frontend is served from `/` and lets you:
 - submit the same JSON shape the app can send,
 - view product cards sorted by score,
 - filter returned products by score band, category, product type, and score sheet,
-- run a representative profile coverage audit,
+- run the same PnC coverage modes used by the final workbook,
 - see simple coverage colors: `Good` = green, `Present` = yellow, `Weak` = red.
 
 ## Code Structure
@@ -87,7 +94,7 @@ roopsee_coverage/
   loaders.py                   # Workbook and CSV parsers
   models.py                    # ScoreRow dataclass
   profile_rules.py             # Gender-aware profile sanitization rules
-  profiles.py                  # Representative quiz profile generation
+  profiles.py                  # PnC grid and representative profile generation
   scoring.py                   # Score calculation, summaries, threshold counts
   server.py                    # HTTP routes and static frontend serving
   utils.py                     # Text/UID normalization helpers
