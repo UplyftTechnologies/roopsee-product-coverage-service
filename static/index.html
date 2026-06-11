@@ -209,7 +209,7 @@
 
       .summary-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
         gap: 12px;
         margin-bottom: 18px;
       }
@@ -252,6 +252,33 @@
         color: var(--muted);
         font-size: 0.78rem;
         font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .threshold-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+        gap: 10px;
+        margin: 14px 0 18px;
+      }
+
+      .threshold-card {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: #fff;
+        padding: 12px;
+      }
+
+      .threshold-card strong {
+        display: block;
+        font-size: 1.35rem;
+      }
+
+      .threshold-card span {
+        color: var(--muted);
+        font-size: 0.74rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
       }
 
@@ -512,9 +539,12 @@
             Score
             <select id="scoreFilter">
               <option value="all">All scores</option>
-              <option value="good">Good</option>
-              <option value="present">Present</option>
-              <option value="weak">Weak</option>
+              <option value="above90">Above 90</option>
+              <option value="above80">Above 80</option>
+              <option value="above70">Above 70</option>
+              <option value="above60">Above 60</option>
+              <option value="above50">Above 50</option>
+              <option value="below50">Below 50</option>
             </select>
           </label>
           <label>
@@ -654,6 +684,23 @@
         document.querySelector("#coverageHint").textContent = coverageModes[mode] || coverageModes.all_pnc;
       }
 
+      function thresholdCard(label, value) {
+        return `<div class="threshold-card"><strong>${formatNumber(value)}</strong><span>${label}</span></div>`;
+      }
+
+      function renderCoverageThresholdStrip(row) {
+        if (!row) return "";
+        return `
+          <div class="threshold-strip">
+            ${thresholdCard("Above 90", row.above_90)}
+            ${thresholdCard("Above 80", row.above_80)}
+            ${thresholdCard("Above 70", row.above_70)}
+            ${thresholdCard("Above 60", row.above_60)}
+            ${thresholdCard("Above 50", row.above_50)}
+          </div>
+        `;
+      }
+
       function scoreBand(score) {
         if (score >= 80) return { label: "Good", className: "good" };
         if (score >= 60) return { label: "Present", className: "present" };
@@ -669,9 +716,11 @@
       function renderProductSummary(products) {
         document.querySelector("#summaryGrid").innerHTML = [
           metric("Matches", `${products.length}/${currentTotalMatches}`),
-          metric("Good", products.filter((product) => product.score >= 80).length),
-          metric("Present", products.filter((product) => product.score >= 60 && product.score < 80).length),
-          metric("Weak", products.filter((product) => product.score < 60).length),
+          metric("Above 90", products.filter((product) => product.score >= 90).length),
+          metric("Above 80", products.filter((product) => product.score >= 80).length),
+          metric("Above 70", products.filter((product) => product.score >= 70).length),
+          metric("Above 60", products.filter((product) => product.score >= 60).length),
+          metric("Above 50", products.filter((product) => product.score >= 50).length),
         ].join("");
       }
 
@@ -705,8 +754,12 @@
         const sheetFilter = document.querySelector("#sheetFilter").value;
 
         return products.filter((product) => {
-          const band = scoreBand(product.score).className;
-          if (scoreFilter !== "all" && band !== scoreFilter) return false;
+          if (scoreFilter === "above90" && product.score < 90) return false;
+          if (scoreFilter === "above80" && product.score < 80) return false;
+          if (scoreFilter === "above70" && product.score < 70) return false;
+          if (scoreFilter === "above60" && product.score < 60) return false;
+          if (scoreFilter === "above50" && product.score < 50) return false;
+          if (scoreFilter === "below50" && product.score >= 50) return false;
           if (categoryFilter !== "all" && product.category !== categoryFilter) return false;
           if (typeFilter !== "all" && product.product_type !== typeFilter) return false;
           if (sheetFilter !== "all" && product.source_sheet !== sheetFilter) return false;
@@ -792,14 +845,19 @@
             ${response.mode_meta?.formula || coverageModes[mode] || ""}<br />
             Showing weakest ${formatNumber(response.returned_rows || visibleRows.length)} of ${formatNumber(response.total_rows || response.profile_count)} calculated rows.
           </div>
+          <div class="section-title">Weakest Row Product Counts</div>
+          ${renderCoverageThresholdStrip(visibleRows[0])}
           <table>
             <thead>
               <tr>
                 <th>Status</th>
                 <th>Profile</th>
                 <th>Special State</th>
-                <th>Good Products</th>
-                <th>Present+ Products</th>
+                <th>Above 90</th>
+                <th>Above 80</th>
+                <th>Above 70</th>
+                <th>Above 60</th>
+                <th>Above 50</th>
                 <th>Top Products</th>
               </tr>
             </thead>
@@ -816,8 +874,11 @@
                     <td><span class="status ${band.className}">${band.label}</span></td>
                     <td>${profile.selectedSkinType}; ${profile.age}; ${profile.concernGroup || ""}; ${concerns}</td>
                     <td>${specialState}<br><small>Scored as: ${scoringSpecial}</small></td>
-                    <td>${row.great_or_better_count}</td>
-                    <td>${row.good_or_better_count}</td>
+                    <td>${row.above_90}</td>
+                    <td>${row.above_80}</td>
+                    <td>${row.above_70}</td>
+                    <td>${row.above_60}</td>
+                    <td>${row.above_50}</td>
                     <td>${row.top_products.map((product) => `${product.product_name} (${product.score})`).join("<br>")}</td>
                   </tr>
                 `;
