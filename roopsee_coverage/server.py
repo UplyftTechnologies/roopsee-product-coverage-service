@@ -171,7 +171,7 @@ def main() -> None:
     score_workbook = Path(os.getenv("SCORE_WORKBOOK_PATH", DEFAULT_SCORE_WORKBOOK)).expanduser()
     products_csv = Path(os.getenv("PRODUCTS_CSV_PATH", DEFAULT_PRODUCTS_CSV)).expanduser()
     port = int(os.getenv("PORT", "8020"))
-    host = os.getenv("HOST", "127.0.0.1")
+    host = os.getenv("HOST", "0.0.0.0")
 
     engine = RecommendationEngine(score_workbook, products_csv)
     server = ThreadingHTTPServer((host, port), make_handler(engine))
