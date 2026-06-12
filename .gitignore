@@ -10,6 +10,10 @@ data/*.csv
 *.xlsx
 *.csv
 
+# Published review workbooks.
+!data/Product details and score logic.xlsx
+!outputs/Roopsee_Full_Profile_Coverage_Final.xlsx
+
 # Local environment files.
 .env
 .env.local
