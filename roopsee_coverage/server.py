@@ -90,7 +90,17 @@ def send_file(handler: BaseHTTPRequestHandler, path: Path) -> None:
     if not path.exists() or not path.is_file():
         handler.send_error(HTTPStatus.NOT_FOUND)
         return
-    content_type = "text/html; charset=utf-8" if path.suffix == ".html" else "text/plain; charset=utf-8"
+    content_types = {
+        ".html": "text/html; charset=utf-8",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+        ".svg": "image/svg+xml",
+        ".css": "text/css; charset=utf-8",
+        ".js": "text/javascript; charset=utf-8",
+    }
+    content_type = content_types.get(path.suffix.lower(), "text/plain; charset=utf-8")
     body = path.read_bytes()
     handler.send_response(HTTPStatus.OK)
     handler.send_header("Content-Type", content_type)

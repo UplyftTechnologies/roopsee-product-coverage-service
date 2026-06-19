@@ -3,21 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Roopsee Product Coverage Tester</title>
+    <title>Roopsee Match Studio</title>
     <style>
       :root {
-        --ink: #3e3342;
+        --ink: #3d3341;
         --muted: #766b7d;
-        --line: #e4dce6;
-        --soft: #faf7f3;
+        --line: #e8dfe8;
         --panel: #fffdfb;
+        --cream: #fff9f2;
         --rose: #c255a8;
-        --rose-dark: #9d3f84;
-        --rose-soft: #f3e4ee;
-        --green: #1f8a57;
-        --amber: #b7791f;
+        --rose-dark: #963d7e;
+        --rose-soft: #f5e5ef;
+        --green: #197a4d;
+        --amber: #ac741b;
         --red: #b83232;
-        --shadow: 0 18px 50px rgba(83, 66, 78, 0.12);
+        --shadow: 0 22px 54px rgba(77, 57, 72, 0.13);
       }
 
       * {
@@ -25,62 +25,92 @@
       }
 
       body {
+        min-height: 100vh;
         margin: 0;
         background:
-          radial-gradient(circle at top left, rgba(194, 85, 168, 0.12), transparent 28rem),
-          linear-gradient(135deg, #fffaf5 0%, #f8f2f8 52%, #fff9f0 100%);
+          radial-gradient(circle at 10% 0%, rgba(194, 85, 168, 0.13), transparent 30rem),
+          radial-gradient(circle at 88% 12%, rgba(246, 170, 104, 0.16), transparent 26rem),
+          linear-gradient(135deg, #fffaf5 0%, #f8f2f7 48%, #fff8ef 100%);
         color: var(--ink);
         font-family: ui-rounded, "Avenir Next", "Nunito Sans", "Trebuchet MS", sans-serif;
       }
 
+      button,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
       header {
-        max-width: 1180px;
+        max-width: 1420px;
         margin: 0 auto;
-        padding: 38px 20px 18px;
+        padding: 34px 22px 18px;
+      }
+
+      .eyebrow {
+        width: fit-content;
+        margin-bottom: 10px;
+        border: 1px solid rgba(194, 85, 168, 0.18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.65);
+        color: var(--rose-dark);
+        padding: 7px 11px;
+        font-size: 0.72rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
 
       h1 {
         margin: 0;
         font-family: Georgia, "Times New Roman", serif;
-        font-size: clamp(2rem, 5vw, 4.6rem);
+        font-size: clamp(2.2rem, 5vw, 4.7rem);
         line-height: 0.95;
-        letter-spacing: -0.05em;
+        letter-spacing: -0.055em;
       }
 
       header p {
-        max-width: 720px;
+        max-width: 780px;
+        margin: 14px 0 0;
         color: var(--muted);
-        font-size: 1.05rem;
+        font-size: 1.02rem;
         line-height: 1.55;
       }
 
       main {
         display: grid;
-        grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+        grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
         gap: 22px;
-        max-width: 1180px;
+        max-width: 1420px;
         margin: 0 auto;
-        padding: 0 20px 48px;
+        padding: 0 22px 52px;
       }
 
       .panel {
         background: rgba(255, 253, 251, 0.9);
-        border: 1px solid rgba(228, 220, 230, 0.9);
+        border: 1px solid rgba(232, 223, 232, 0.9);
         border-radius: 30px;
         box-shadow: var(--shadow);
-        padding: 22px;
       }
 
-      .sticky {
-        position: static;
+      .profile-panel {
         align-self: start;
+        padding: 20px;
+      }
+
+      .shop-panel {
+        min-width: 0;
+        padding: 20px;
       }
 
       .section-title {
-        margin: 4px 0 12px;
+        margin: 2px 0 11px;
         color: var(--muted);
-        font-size: 0.82rem;
-        font-weight: 900;
+        font-size: 0.76rem;
+        font-weight: 950;
         letter-spacing: 0.11em;
         text-transform: uppercase;
       }
@@ -88,130 +118,513 @@
       .chips {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        margin-bottom: 20px;
+        gap: 9px;
+        margin-bottom: 18px;
       }
 
       .chip {
+        min-height: 48px;
         border: 2px solid var(--line);
+        border-radius: 16px;
         background: #fff;
         color: #5f5267;
-        border-radius: 16px;
-        min-height: 50px;
-        padding: 10px 14px;
-        font: inherit;
-        font-weight: 750;
+        padding: 10px 13px;
+        font-weight: 820;
         text-align: left;
-        cursor: pointer;
         transition: 160ms ease;
       }
 
       .chip:hover {
         transform: translateY(-1px);
-        border-color: rgba(194, 85, 168, 0.45);
+        border-color: rgba(194, 85, 168, 0.42);
       }
 
       .chip.active {
-        background: var(--rose-soft);
         border-color: var(--rose);
+        background: var(--rose-soft);
         color: var(--ink);
       }
 
       .tabs {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        border: 2px solid #ebb9db;
-        border-radius: 15px;
         overflow: hidden;
+        border: 2px solid #ebb9db;
+        border-radius: 16px;
         margin-bottom: 12px;
       }
 
       .tab {
         border: 0;
-        padding: 13px;
         background: #fff;
-        color: #9a8da2;
-        font: inherit;
-        font-weight: 900;
-        cursor: pointer;
+        color: #988ca1;
+        padding: 13px;
+        font-weight: 950;
       }
 
       .tab.active {
         background: var(--rose);
-        color: white;
+        color: #fff;
       }
 
       .row {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 12px;
+        gap: 11px;
       }
 
       select {
         width: 100%;
-        height: 52px;
-        border-radius: 16px;
+        height: 50px;
         border: 2px solid var(--line);
+        border-radius: 16px;
         background: #fff;
         color: var(--ink);
-        padding: 0 14px;
-        font: inherit;
-        font-weight: 800;
+        padding: 0 13px;
+        font-weight: 850;
       }
 
       .actions {
         display: grid;
         gap: 10px;
-        margin-top: 20px;
-      }
-
-      .coverage-picker {
         margin-top: 18px;
       }
 
-      .hint {
-        margin: 8px 0 0;
-        color: var(--muted);
-        font-size: 0.86rem;
-        line-height: 1.4;
-      }
-
-      button.primary,
-      button.secondary {
+      .primary,
+      .secondary {
         min-height: 54px;
         border-radius: 999px;
-        font: inherit;
-        font-weight: 950;
-        cursor: pointer;
+        font-weight: 1000;
       }
 
-      button.primary {
+      .primary {
         border: 0;
         background: linear-gradient(135deg, var(--rose), var(--rose-dark));
-        color: white;
+        color: #fff;
       }
 
-      button.secondary {
+      .secondary {
         border: 2px solid var(--rose);
         background: transparent;
         color: var(--rose-dark);
       }
 
-      .json-box {
-        margin-top: 16px;
-        background: #2d2530;
-        color: #f8e9f5;
-        border-radius: 18px;
-        padding: 14px;
-        overflow: auto;
-        font: 0.78rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      .skin-map-card {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        margin: 2px 0 22px;
+        padding: 16px;
+        border: 1px solid rgba(194, 85, 168, 0.2);
+        border-radius: 28px;
+        background:
+          radial-gradient(circle at 20% 12%, rgba(255, 255, 255, 0.9), transparent 11rem),
+          radial-gradient(circle at 82% 22%, rgba(194, 85, 168, 0.16), transparent 12rem),
+          linear-gradient(145deg, #fff9f1 0%, #f7ebf3 56%, #fffdfb 100%);
+      }
+
+      .skin-map-top {
+        display: grid;
+        gap: 6px;
+      }
+
+      .map-kicker {
+        width: fit-content;
+        border-radius: 999px;
+        background: rgba(62, 51, 66, 0.08);
+        color: var(--rose-dark);
+        padding: 5px 10px;
+        font-size: 0.68rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .skin-map-top strong {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.45rem;
+        line-height: 1;
+        letter-spacing: -0.04em;
+      }
+
+      .skin-map-top p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.38;
+      }
+
+      .completion-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+        margin-top: 8px;
+      }
+
+      .completion-track {
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(62, 51, 66, 0.1);
+      }
+
+      .completion-fill {
+        display: block;
+        width: 0%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #f3a65a, var(--rose), #6c5ce7);
+        transition: width 240ms ease;
+      }
+
+      .completion-text {
+        color: var(--rose-dark);
+        font-size: 0.72rem;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+
+      .face-scene {
+        position: relative;
+        min-height: 410px;
+        margin-top: 13px;
+        display: grid;
+        place-items: center;
+      }
+
+      .portrait-stage {
+        position: relative;
+        width: min(360px, 86vw);
+        height: 410px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        border-radius: 32px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(246, 230, 241, 0.34));
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.8),
+          0 22px 46px rgba(64, 43, 56, 0.14);
+      }
+
+      .portrait-stage::before {
+        content: "";
+        position: absolute;
+        inset: 10% 15% 18%;
+        z-index: 4;
+        border-radius: 46% 46% 48% 48% / 38% 38% 58% 58%;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 240ms ease;
+      }
+
+      .portrait-stage.skin-oily::before {
+        opacity: 0.48;
+        background:
+          radial-gradient(ellipse at 50% 27%, rgba(255, 255, 255, 0.5), transparent 18%),
+          radial-gradient(ellipse at 51% 53%, rgba(255, 255, 255, 0.18), transparent 26%);
+        mix-blend-mode: screen;
+      }
+
+      .portrait-stage.skin-dry::before,
+      .portrait-stage.has-dryness::before {
+        opacity: 0.38;
+        background:
+          radial-gradient(ellipse at 31% 58%, rgba(232, 207, 190, 0.28), transparent 28%),
+          radial-gradient(ellipse at 68% 60%, rgba(232, 207, 190, 0.24), transparent 28%),
+          linear-gradient(110deg, transparent 46%, rgba(112, 78, 71, 0.09) 48% 50%, transparent 52%);
+        background-size: auto, auto, 42px 42px;
+        mix-blend-mode: multiply;
+      }
+
+      .portrait-stage.skin-combination::before {
+        opacity: 0.44;
+        background:
+          radial-gradient(ellipse at 50% 28%, rgba(255, 255, 255, 0.48), transparent 19%),
+          radial-gradient(ellipse at 66% 62%, rgba(255, 246, 239, 0.24), transparent 24%);
+        mix-blend-mode: screen;
+      }
+
+      .portrait-stage.has-dullness .portrait-image {
+        filter: drop-shadow(0 22px 28px rgba(62, 40, 53, 0.18)) saturate(0.88) brightness(0.97);
+      }
+
+      .portrait-stage.has-sensitivity .portrait-image {
+        filter: drop-shadow(0 22px 28px rgba(62, 40, 53, 0.18)) saturate(1.06);
+      }
+
+      .portrait-image {
+        position: relative;
+        z-index: 2;
+        width: 112%;
+        height: 112%;
+        object-fit: cover;
+        object-position: center 45%;
+        filter: drop-shadow(0 22px 28px rgba(62, 40, 53, 0.18));
+        transition: filter 220ms ease, transform 220ms ease;
+      }
+
+      .portrait-scan {
+        position: absolute;
+        inset: 8% 9% 12%;
+        z-index: 5;
+        pointer-events: none;
+        border-radius: 42%;
+        background:
+          linear-gradient(180deg, transparent 0 43%, rgba(255, 255, 255, 0.24) 46%, rgba(194, 85, 168, 0.07) 48%, transparent 53%),
+          radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.1), transparent 34%);
+        mix-blend-mode: screen;
+        opacity: 0.54;
+        animation: scanFloat 4.6s ease-in-out infinite;
+      }
+
+      .portrait-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 6;
+        pointer-events: none;
+      }
+
+      .skin-effect {
+        --effect-opacity: 0.42;
+        position: absolute;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        animation: effectIn 320ms ease forwards;
+      }
+
+      .effect-acne {
+        --effect-opacity: 0.58;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 42% 36%, rgba(246, 139, 138, 0.95) 0 18%, rgba(196, 67, 88, 0.62) 42%, rgba(196, 67, 88, 0.08) 76%);
+        box-shadow: 0 0 0 6px rgba(196, 67, 88, 0.06), 0 0 12px rgba(196, 67, 88, 0.12);
+        mix-blend-mode: multiply;
+      }
+
+      .effect-pigment,
+      .effect-dark-spot,
+      .effect-dull-lip {
+        --effect-opacity: 0.3;
+        width: 38px;
+        height: 23px;
+        border-radius: 54% 46% 48% 52%;
+        background: radial-gradient(ellipse, rgba(112, 73, 51, 0.3), rgba(112, 73, 51, 0.04) 74%);
+        filter: blur(0.8px);
+        mix-blend-mode: multiply;
+      }
+
+      .effect-dark-spot {
+        --effect-opacity: 0.36;
+        width: 15px;
+        height: 12px;
+        background: radial-gradient(ellipse, rgba(80, 54, 43, 0.34), rgba(80, 54, 43, 0.03) 74%);
+      }
+
+      .effect-dryness {
+        --effect-opacity: 0.55;
+        width: 58px;
+        height: 38px;
+        border-radius: 50%;
+        background:
+          radial-gradient(ellipse at 50% 50%, rgba(232, 207, 190, 0.34), rgba(232, 207, 190, 0.12) 45%, transparent 72%),
+          linear-gradient(112deg, transparent 43%, rgba(114, 80, 72, 0.18) 47% 48.5%, transparent 53%),
+          linear-gradient(24deg, transparent 42%, rgba(255, 246, 239, 0.28) 46% 48%, transparent 53%);
+        background-size: auto, 24px 24px, 19px 19px;
+        filter: blur(0.4px);
+        mix-blend-mode: multiply;
+      }
+
+      .effect-aging {
+        --effect-opacity: 0.32;
+        width: 66px;
+        height: 24px;
+        border-top: 1px solid rgba(82, 53, 60, 0.2);
+        border-bottom: 1px solid rgba(82, 53, 60, 0.1);
+        border-radius: 50%;
+        filter: blur(0.2px);
+      }
+
+      .effect-sensitivity {
+        --effect-opacity: 0.34;
+        width: 92px;
+        height: 66px;
+        border-radius: 50%;
+        background: radial-gradient(ellipse, rgba(224, 71, 88, 0.16), rgba(224, 71, 88, 0.03) 46%, transparent 72%);
+        filter: blur(1.8px);
+        mix-blend-mode: multiply;
+      }
+
+      .effect-pore {
+        --effect-opacity: 0.34;
+        width: 52px;
+        height: 34px;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 28% 34%, rgba(50, 39, 43, 0.22) 0 4%, transparent 5%),
+          radial-gradient(circle at 57% 37%, rgba(50, 39, 43, 0.18) 0 3.5%, transparent 4.5%),
+          radial-gradient(circle at 42% 66%, rgba(50, 39, 43, 0.16) 0 3.5%, transparent 4.5%),
+          radial-gradient(circle at 72% 66%, rgba(50, 39, 43, 0.14) 0 3%, transparent 4%);
+        filter: blur(0.15px);
+        mix-blend-mode: multiply;
+      }
+
+      .effect-eye-shadow,
+      .effect-eye-puff,
+      .effect-eye-red {
+        width: 64px;
+        height: 24px;
+        border-radius: 0 0 999px 999px;
+      }
+
+      .effect-eye-shadow {
+        --effect-opacity: 0.34;
+        background: radial-gradient(ellipse, rgba(77, 57, 96, 0.2), rgba(77, 57, 96, 0.04) 48%, transparent 72%);
+        filter: blur(1.8px);
+        mix-blend-mode: multiply;
+      }
+
+      .effect-eye-puff {
+        --effect-opacity: 0.38;
+        background: radial-gradient(ellipse, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.06) 54%, transparent 70%);
+        border-bottom: 1px solid rgba(120, 78, 82, 0.12);
+        mix-blend-mode: screen;
+      }
+
+      .effect-eye-red {
+        --effect-opacity: 0.36;
+        border: 1px solid rgba(210, 54, 73, 0.18);
+        background: radial-gradient(ellipse, rgba(210, 54, 73, 0.07), transparent 68%);
+      }
+
+      .effect-lip-crack {
+        --effect-opacity: 0.4;
+        width: 46px;
+        height: 18px;
+        background:
+          linear-gradient(102deg, transparent 45%, rgba(255, 246, 238, 0.58) 47% 49%, transparent 51%),
+          linear-gradient(62deg, transparent 50%, rgba(89, 31, 48, 0.16) 51% 53%, transparent 55%);
+      }
+
+      .effect-lip-pigment {
+        --effect-opacity: 0.32;
+        width: 64px;
+        height: 24px;
+        border-radius: 999px;
+        background: radial-gradient(ellipse, rgba(73, 24, 48, 0.22), rgba(73, 24, 48, 0.02) 72%);
+        mix-blend-mode: multiply;
+      }
+
+      .effect-shield {
+        --effect-opacity: 0.34;
+        width: 94px;
+        height: 94px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(31, 138, 87, 0.18), rgba(31, 138, 87, 0.06) 48%, transparent 72%);
+        box-shadow: inset 0 0 0 1px rgba(31, 138, 87, 0.08);
+        mix-blend-mode: screen;
+      }
+
+      .skin-map-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        min-height: 28px;
+        margin-top: 10px;
+      }
+
+      .legend-pill {
+        border: 1px solid rgba(194, 85, 168, 0.2);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.68);
+        color: #66536c;
+        padding: 6px 9px;
+        font-size: 0.68rem;
+        font-weight: 900;
+      }
+
+      @keyframes effectIn {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -44%) scale(0.85);
+        }
+        to {
+          opacity: var(--effect-opacity);
+          transform: translate(-50%, -50%) scale(1);
+        }
+      }
+
+      @keyframes scanFloat {
+        0%, 100% {
+          transform: translateY(-12px);
+          opacity: 0.42;
+        }
+        50% {
+          transform: translateY(18px);
+          opacity: 0.64;
+        }
+      }
+
+      .studio-toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: end;
+        margin-bottom: 16px;
+      }
+
+      .studio-title h2 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(1.7rem, 3vw, 2.55rem);
+        line-height: 1;
+        letter-spacing: -0.045em;
+      }
+
+      .studio-title p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .profile-pill {
+        border-radius: 999px;
+        background: #fff;
+        border: 1px solid var(--line);
+        color: var(--rose-dark);
+        padding: 9px 12px;
+        font-size: 0.78rem;
+        font-weight: 950;
+        white-space: nowrap;
       }
 
       .summary-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
-        gap: 12px;
-        margin-bottom: 18px;
+        grid-template-columns: repeat(7, minmax(95px, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .metric {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 12px;
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 1.45rem;
+        line-height: 1;
+      }
+
+      .metric span {
+        color: var(--muted);
+        font-size: 0.7rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
       }
 
       .filters {
@@ -223,8 +636,8 @@
 
       .filters label {
         color: var(--muted);
-        font-size: 0.72rem;
-        font-weight: 900;
+        font-size: 0.7rem;
+        font-weight: 950;
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
@@ -232,254 +645,399 @@
       .filters select {
         height: 44px;
         margin-top: 6px;
-        font-size: 0.9rem;
-      }
-
-      .metric {
-        background: #fff;
-        border: 1px solid var(--line);
-        border-radius: 20px;
-        padding: 14px;
-      }
-
-      .metric strong {
-        display: block;
-        font-size: 1.7rem;
-        line-height: 1;
-      }
-
-      .metric span {
-        color: var(--muted);
-        font-size: 0.78rem;
-        font-weight: 850;
-        text-transform: uppercase;
-      }
-
-      .threshold-strip {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
-        gap: 10px;
-        margin: 14px 0 18px;
-      }
-
-      .threshold-card {
-        border: 1px solid var(--line);
-        border-radius: 18px;
-        background: #fff;
-        padding: 12px;
-      }
-
-      .threshold-card strong {
-        display: block;
-        font-size: 1.35rem;
-      }
-
-      .threshold-card span {
-        color: var(--muted);
-        font-size: 0.74rem;
-        font-weight: 900;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
+        font-size: 0.88rem;
       }
 
       .product-grid {
         display: grid;
-        gap: 14px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
       }
 
       .product-card {
+        position: relative;
         display: grid;
-        grid-template-columns: 86px minmax(0, 1fr) auto;
-        gap: 14px;
-        align-items: center;
+        grid-template-rows: auto 1fr;
+        overflow: hidden;
+        min-height: 420px;
+        border: 1px solid rgba(232, 223, 232, 0.95);
+        border-radius: 28px;
         background: #fff;
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        padding: 12px;
+        box-shadow: 0 14px 34px rgba(77, 57, 72, 0.09);
+        transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
       }
 
-      .product-card img,
+      .product-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(194, 85, 168, 0.38);
+        box-shadow: 0 24px 42px rgba(77, 57, 72, 0.14);
+      }
+
+      .product-image-wrap {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        background:
+          radial-gradient(circle at 24% 16%, rgba(255, 255, 255, 0.88), transparent 8rem),
+          linear-gradient(135deg, #f6e8f1, #fff6ea);
+      }
+
+      .product-image-wrap img,
       .image-fallback {
-        width: 86px;
-        height: 86px;
-        border-radius: 18px;
+        width: 100%;
+        height: 100%;
         object-fit: cover;
-        background: linear-gradient(135deg, #f0dfeb, #fff5e9);
       }
 
       .image-fallback {
         display: grid;
         place-items: center;
         color: var(--rose);
-        font-weight: 900;
-      }
-
-      .product-card h3 {
-        margin: 0 0 4px;
-        font-size: 1rem;
-      }
-
-      .product-card p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.86rem;
-        line-height: 1.38;
-      }
-
-      .score {
-        width: 76px;
-        height: 76px;
-        display: grid;
-        place-items: center;
-        align-content: center;
-        border-radius: 50%;
-        font-size: 1.16rem;
+        font-size: 2.4rem;
         font-weight: 1000;
       }
 
-      .score strong,
-      .score span {
-        display: block;
-        line-height: 1;
+      .score-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 10px 26px rgba(62, 51, 66, 0.15);
+        color: var(--ink);
+        font-weight: 1000;
       }
 
-      .score span {
-        margin-top: 5px;
-        font-size: 0.62rem;
+      .score-badge small {
+        display: block;
+        margin-top: -3px;
+        color: var(--muted);
+        font-size: 0.56rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
       .score-good {
-        background: #e5f6ee;
         color: var(--green);
       }
 
       .score-present {
-        background: #fff4d6;
         color: var(--amber);
       }
 
       .score-weak {
-        background: #ffe4e4;
         color: var(--red);
+      }
+
+      .product-body {
+        display: grid;
+        gap: 9px;
+        padding: 14px;
+      }
+
+      .product-card h3 {
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.24;
+      }
+
+      .product-meta,
+      .product-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.38;
+      }
+
+      .price-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-weight: 950;
+      }
+
+      .price-row del {
+        color: #a99daa;
+        font-size: 0.82rem;
+        font-weight: 800;
       }
 
       .tagline {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin-top: 8px;
       }
 
       .tag {
         border-radius: 999px;
-        background: #f6f0f7;
+        background: #f7f0f7;
         color: #695b70;
         padding: 5px 8px;
-        font-size: 0.72rem;
+        font-size: 0.68rem;
         font-weight: 850;
       }
 
-      table {
+      .details-link {
+        align-self: end;
         width: 100%;
-        border-collapse: collapse;
-        overflow: hidden;
-        border-radius: 18px;
-        background: #fff;
-      }
-
-      th,
-      td {
-        border-bottom: 1px solid var(--line);
-        padding: 10px;
-        text-align: left;
-        vertical-align: top;
-        font-size: 0.85rem;
-      }
-
-      th {
-        color: var(--muted);
-        font-size: 0.72rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .status {
-        display: inline-block;
+        min-height: 42px;
+        border: 0;
         border-radius: 999px;
-        padding: 4px 9px;
-        font-weight: 900;
-      }
-
-      .Good {
-        background: #e5f6ee;
-        color: var(--green);
-      }
-
-      .Present {
-        background: #fff4d6;
-        color: var(--amber);
-      }
-
-      .Weak {
-        background: #ffe4e4;
-        color: var(--red);
+        background: #3d3342;
+        color: #fff;
+        font-weight: 950;
       }
 
       .empty {
         color: var(--muted);
-        padding: 28px;
+        padding: 30px;
         text-align: center;
         border: 1px dashed var(--line);
         border-radius: 22px;
       }
 
-      @media (max-width: 900px) {
+      details.payload-details {
+        margin-top: 14px;
+      }
+
+      details.payload-details summary {
+        color: var(--rose-dark);
+        cursor: pointer;
+        font-size: 0.82rem;
+        font-weight: 950;
+      }
+
+      .json-box {
+        margin-top: 10px;
+        max-height: 220px;
+        overflow: auto;
+        border-radius: 18px;
+        background: #2d2530;
+        color: #f8e9f5;
+        padding: 13px;
+        font: 0.76rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 22px;
+        background: rgba(42, 32, 43, 0.48);
+        backdrop-filter: blur(10px);
+      }
+
+      .modal.open {
+        display: flex;
+      }
+
+      .modal-card {
+        width: min(1040px, 100%);
+        max-height: min(86vh, 820px);
+        overflow: auto;
+        border-radius: 34px;
+        background: var(--panel);
+        box-shadow: 0 34px 90px rgba(28, 21, 30, 0.28);
+      }
+
+      .modal-grid {
+        display: grid;
+        grid-template-columns: minmax(260px, 420px) minmax(0, 1fr);
+        gap: 22px;
+        padding: 22px;
+      }
+
+      .modal-image {
+        overflow: hidden;
+        border-radius: 26px;
+        background: linear-gradient(135deg, #f6e8f1, #fff6ea);
+      }
+
+      .modal-image img,
+      .modal-image .image-fallback {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+      }
+
+      .modal-content {
+        min-width: 0;
+      }
+
+      .modal-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .close-button {
+        width: 42px;
+        height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: #fff;
+        color: var(--ink);
+        font-size: 1.2rem;
+        font-weight: 950;
+      }
+
+      .modal h2 {
+        margin: 0 0 8px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(1.5rem, 3vw, 2.25rem);
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+      }
+
+      .modal p {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin: 14px 0;
+      }
+
+      .detail-box {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: #fff;
+        padding: 11px;
+      }
+
+      .detail-box span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .detail-box strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.95rem;
+      }
+
+      .component-list {
+        display: grid;
+        gap: 7px;
+        padding: 0;
+        margin: 10px 0 0;
+        list-style: none;
+      }
+
+      .component-list li {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        border-radius: 14px;
+        background: #f8f1f7;
+        padding: 8px 10px;
+        color: #5f5267;
+        font-size: 0.84rem;
+        font-weight: 850;
+      }
+
+      .warnings {
+        border-radius: 18px;
+        background: #fff4d6;
+        color: #7a4d10;
+        padding: 11px;
+        font-size: 0.86rem;
+        font-weight: 850;
+      }
+
+      @media (max-width: 1180px) {
         main {
           grid-template-columns: 1fr;
         }
 
-        .sticky {
-          position: static;
-        }
-
-        .summary-grid {
+        .product-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+      }
 
-        .filters {
+      @media (max-width: 760px) {
+        header {
+          padding-top: 24px;
+        }
+
+        main {
+          padding-inline: 14px;
+        }
+
+        .summary-grid,
+        .filters,
+        .product-grid,
+        .modal-grid {
           grid-template-columns: 1fr;
         }
 
-        .product-card {
-          grid-template-columns: 72px minmax(0, 1fr);
+        .studio-toolbar {
+          grid-template-columns: 1fr;
         }
 
-        .score {
-          grid-column: 1 / -1;
-          width: 100%;
-          height: auto;
-          border-radius: 16px;
-          padding: 9px;
+        .row {
+          grid-template-columns: 1fr;
         }
       }
     </style>
   </head>
   <body>
     <header>
-      <h1>Roopsee Match Lab</h1>
+      <div class="eyebrow">Excel-backed storefront simulator</div>
+      <h1>Roopsee Match Studio</h1>
       <p>
-        A lightweight tester for the final product score sheets. It sends the same quiz-style JSON
-        that the app will use, returns only products present in the live catalog CSV, and sorts them
-        by the applicable doctor-sheet score.
+        Change the profile, see the exact products a shopper would see, and open product details
+        without auth, cart, or checkout noise. Scores and explanations still come from the Excel
+        score sheets and live catalog CSV.
       </p>
     </header>
 
     <main>
-      <section class="panel sticky">
+      <section class="panel profile-panel">
         <div class="section-title">Skin Type *</div>
         <div class="chips" id="skinTypeChips"></div>
+
+        <div class="skin-map-card" aria-label="Interactive skin profile preview">
+          <div class="skin-map-top">
+            <span class="map-kicker" id="faceModeLabel">Female preview</span>
+            <strong>Live Skin Scan</strong>
+            <p id="faceNarrative">Choose concerns to see them mapped on the scan.</p>
+            <div class="completion-row">
+              <div class="completion-track" aria-hidden="true">
+                <span class="completion-fill" id="completionFill"></span>
+              </div>
+              <span class="completion-text" id="completionText">0/5 complete</span>
+            </div>
+          </div>
+
+          <div class="face-scene">
+            <div class="portrait-stage skin-oily" id="faceArt">
+              <img
+                class="portrait-image"
+                id="facePortrait"
+                src="/assets/skin-scan-female.png"
+                alt="Interactive skin profile face preview"
+              />
+              <div class="portrait-scan"></div>
+              <div class="portrait-overlay" id="portraitOverlay"></div>
+            </div>
+          </div>
+          <div class="skin-map-legend" id="skinMapLegend"></div>
+        </div>
 
         <div class="section-title">Skin Concerns (Max 2) *</div>
         <div class="tabs">
@@ -504,8 +1062,8 @@
           <div>
             <div class="section-title">Gender</div>
             <select id="genderSelect">
-              <option>male</option>
               <option>female</option>
+              <option>male</option>
               <option>other</option>
               <option>prefer not to say</option>
             </select>
@@ -513,37 +1071,35 @@
         </div>
 
         <div class="actions">
-          <button class="primary" id="matchButton">Get Sorted Products</button>
-          <div class="coverage-picker">
-            <div class="section-title">Coverage Mode</div>
-            <select id="coverageMode">
-              <option value="all_pnc">All PnC Combinations</option>
-              <option value="skin_concern_type">Skin Concern Type</option>
-              <option value="with_special_conditions">With Special Conditions</option>
-              <option value="representative">Quick Representative Sample</option>
-            </select>
-            <p class="hint" id="coverageHint">
-              4C1 × (2 × (8C1 + 8C2)) × (3C0 + 3C1 + 3C2 + 3C3 + None) × 4 = 10,368 rows.
-            </p>
-          </div>
-          <button class="secondary" id="coverageButton">Run Coverage Audit</button>
+          <button class="primary" id="matchButton">Refresh Product Preview</button>
         </div>
 
-        <pre class="json-box" id="payloadPreview"></pre>
+        <details class="payload-details">
+          <summary>Testing payload</summary>
+          <pre class="json-box" id="payloadPreview"></pre>
+        </details>
       </section>
 
-      <section class="panel">
+      <section class="panel shop-panel">
+        <div class="studio-toolbar">
+          <div class="studio-title">
+            <h2>Recommended for this profile</h2>
+            <p id="resultSubtitle">Products are sorted by the conservative doctor-sheet score.</p>
+          </div>
+          <div class="profile-pill" id="profilePill">Oily · Acne, Dark Spots</div>
+        </div>
+
         <div class="summary-grid" id="summaryGrid"></div>
         <div class="filters" id="filters">
           <label>
-            Score
+            Score Range
             <select id="scoreFilter">
-              <option value="all">All scores</option>
-              <option value="above90">Above 90</option>
-              <option value="above80">Above 80</option>
-              <option value="above70">Above 70</option>
-              <option value="above60">Above 60</option>
-              <option value="above50">Above 50</option>
+              <option value="all">All score ranges</option>
+              <option value="90_100">90-100</option>
+              <option value="80_89">80-89</option>
+              <option value="70_79">70-79</option>
+              <option value="60_69">60-69</option>
+              <option value="50_59">50-59</option>
               <option value="below50">Below 50</option>
             </select>
           </label>
@@ -570,6 +1126,12 @@
       </section>
     </main>
 
+    <div class="modal" id="productModal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-grid" id="modalContent"></div>
+      </div>
+    </div>
+
     <script>
       const state = {
         selectedSkinType: "Oily",
@@ -581,13 +1143,7 @@
 
       let currentProducts = [];
       let currentTotalMatches = 0;
-
-      const coverageModes = {
-        all_pnc: "4C1 × (2 × (8C1 + 8C2)) × (3C0 + 3C1 + 3C2 + 3C3 + None) × 4 = 10,368 rows.",
-        skin_concern_type: "Skin type + concern group/set only: 4 × 72 = 288 rows.",
-        with_special_conditions: "Skin type + concern group/set + special state: 4 × 72 × 9 = 2,592 rows.",
-        representative: "Fast smoke-test sample only: 72 rows.",
-      };
+      let recommendTimer = null;
 
       const options = {
         skinTypes: ["Oily", "Dry", "Normal", "Combination"],
@@ -595,6 +1151,93 @@
         lipsEyesConcerns: ["Dark circles", "Puffiness", "Dry Under Eye", "Sensitive Eye", "Chapped Lips", "Lip Pigment", "Dull Lips", "Dehydrated Lips"],
         specialConditions: ["Excessive Dryness", "Pregnant", "Breastfeeding", "None"],
       };
+
+      const concernVisuals = {
+        Acne: [
+          { type: "effect-acne", x: 40, y: 56, label: "Acne" },
+          { type: "effect-acne", x: 62, y: 57, label: "Breakout" },
+          { type: "effect-acne", x: 51, y: 70, label: "Chin acne" },
+        ],
+        Pigmentation: [
+          { type: "effect-pigment", x: 38, y: 53, label: "Pigmentation" },
+          { type: "effect-pigment", x: 64, y: 57, label: "Uneven tone" },
+        ],
+        Dryness: [
+          { type: "effect-dryness", x: 36, y: 60, label: "Dry patch" },
+          { type: "effect-dryness", x: 65, y: 62, label: "Flaking" },
+        ],
+        "Dark Spots": [
+          { type: "effect-dark-spot", x: 39, y: 60, label: "Dark spot" },
+          { type: "effect-dark-spot", x: 61, y: 52, label: "Spot" },
+        ],
+        Aging: [
+          { type: "effect-aging", x: 50, y: 39, label: "Fine lines" },
+          { type: "effect-aging", x: 36, y: 49, label: "Eye lines" },
+          { type: "effect-aging", x: 64, y: 49, label: "Eye lines" },
+        ],
+        Sensitivity: [
+          { type: "effect-sensitivity", x: 35, y: 58, label: "Sensitive" },
+          { type: "effect-sensitivity", x: 66, y: 58, label: "Reactive" },
+        ],
+        "Large Pores": [
+          { type: "effect-pore", x: 46, y: 58, label: "Pores" },
+          { type: "effect-pore", x: 56, y: 60, label: "Pores" },
+        ],
+        Dullness: [
+          { type: "effect-pigment", x: 50, y: 56, label: "Dullness" },
+        ],
+        "Dark circles": [
+          { type: "effect-eye-shadow", x: 39, y: 51, label: "Dark circle" },
+          { type: "effect-eye-shadow", x: 61, y: 51, label: "Dark circle" },
+        ],
+        Puffiness: [
+          { type: "effect-eye-puff", x: 39, y: 51, label: "Puffiness" },
+          { type: "effect-eye-puff", x: 61, y: 51, label: "Puffiness" },
+        ],
+        "Dry Under Eye": [
+          { type: "effect-aging", x: 39, y: 52, label: "Dry under eye" },
+          { type: "effect-aging", x: 61, y: 52, label: "Dry under eye" },
+        ],
+        "Sensitive Eye": [
+          { type: "effect-eye-red", x: 39, y: 48, label: "Sensitive eye" },
+          { type: "effect-eye-red", x: 61, y: 48, label: "Sensitive eye" },
+        ],
+        "Chapped Lips": [
+          { type: "effect-lip-crack", x: 50, y: 69, label: "Chapped lips" },
+        ],
+        "Lip Pigment": [
+          { type: "effect-lip-pigment", x: 50, y: 69, label: "Lip pigment" },
+        ],
+        "Dull Lips": [
+          { type: "effect-dull-lip", x: 50, y: 69, label: "Dull lips" },
+        ],
+        "Dehydrated Lips": [
+          { type: "effect-dryness", x: 50, y: 70, label: "Dehydrated lips" },
+        ],
+        "Excessive Dryness": [
+          { type: "effect-dryness", x: 33, y: 63, label: "Excessive dryness" },
+          { type: "effect-dryness", x: 68, y: 64, label: "Dryness" },
+        ],
+        Pregnant: [
+          { type: "effect-shield", x: 25, y: 36, label: "Pregnancy safe mode" },
+        ],
+        Breastfeeding: [
+          { type: "effect-shield", x: 75, y: 36, label: "Breastfeeding safe mode" },
+        ],
+      };
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function slug(value) {
+        return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      }
 
       function payload() {
         sanitizeSpecialState();
@@ -626,6 +1269,73 @@
         }
       }
 
+      function selectedConcernsForMap() {
+        return [
+          ...state.selectedFaceBodyConcerns,
+          ...state.selectedLipsEyesConcerns,
+          ...state.selectedSpecialConditions.filter((item) => item !== "None"),
+        ];
+      }
+
+      function markerHtml(marker) {
+        return `<span class="skin-effect ${marker.type}" data-label="${escapeHtml(marker.label)}" style="left:${marker.x}%;top:${marker.y}%"></span>`;
+      }
+
+      function completionState() {
+        const selectedConcerns = [...state.selectedFaceBodyConcerns, ...state.selectedLipsEyesConcerns];
+        const steps = [
+          Boolean(state.selectedSkinType),
+          selectedConcerns.length > 0,
+          state.selectedSpecialConditions.length > 0,
+          Boolean(document.querySelector("#ageSelect").value),
+          Boolean(document.querySelector("#genderSelect").value),
+        ];
+        return {
+          done: steps.filter(Boolean).length,
+          total: steps.length,
+          hasConcern: selectedConcerns.length > 0,
+        };
+      }
+
+      function updateSkinMap() {
+        const gender = selectedGender();
+        const concerns = selectedConcernsForMap();
+        const faceArt = document.querySelector("#faceArt");
+        const portraitOverlay = document.querySelector("#portraitOverlay");
+        const facePortrait = document.querySelector("#facePortrait");
+        const classes = ["portrait-stage", `skin-${slug(state.selectedSkinType)}`];
+
+        if (concerns.some((item) => ["Dryness", "Dry Under Eye", "Chapped Lips", "Dehydrated Lips", "Excessive Dryness"].includes(item))) {
+          classes.push("has-dryness");
+        }
+        if (concerns.includes("Dullness")) classes.push("has-dullness");
+        if (concerns.includes("Sensitivity") || concerns.includes("Sensitive Eye")) classes.push("has-sensitivity");
+
+        faceArt.className = classes.join(" ");
+        facePortrait.src = gender === "male" ? "/assets/skin-scan-male.png" : "/assets/skin-scan-female.png";
+        portraitOverlay.innerHTML = concerns.flatMap((concern) => concernVisuals[concern] || []).map(markerHtml).join("");
+
+        document.querySelector("#faceModeLabel").textContent =
+          gender === "male" ? "Male preview" : gender === "female" ? "Female preview" : "Neutral preview";
+        document.querySelector("#faceNarrative").textContent = concerns.length
+          ? `${concerns.slice(0, 3).join(", ")}${concerns.length > 3 ? " +" + (concerns.length - 3) : ""} mapped live on the scan.`
+          : "Choose at least one concern to wake up the scan.";
+
+        const legendItems = concerns.length ? concerns : ["Select concern"];
+        document.querySelector("#skinMapLegend").innerHTML = legendItems
+          .map((item) => `<span class="legend-pill">${escapeHtml(item)}</span>`)
+          .join("");
+
+        const completion = completionState();
+        const percent = Math.round((completion.done / completion.total) * 100);
+        document.querySelector("#completionFill").style.width = `${percent}%`;
+        document.querySelector("#completionText").textContent = `${completion.done}/${completion.total} complete`;
+
+        const matchButton = document.querySelector("#matchButton");
+        matchButton.disabled = !completion.hasConcern;
+        matchButton.textContent = completion.hasConcern ? "Refresh Product Preview" : "Select Concern First";
+      }
+
       function renderChips(containerId, items, isActive, onClick) {
         const container = document.querySelector(containerId);
         container.innerHTML = "";
@@ -636,6 +1346,7 @@
           button.addEventListener("click", () => {
             onClick(item);
             render();
+            scheduleRecommend();
           });
           container.appendChild(button);
         }
@@ -669,36 +1380,17 @@
         document.querySelector("#faceConcernChips").style.display = state.activeTab === "face" ? "grid" : "none";
         document.querySelector("#lipsConcernChips").style.display = state.activeTab === "lips" ? "grid" : "none";
         document.querySelector("#payloadPreview").textContent = JSON.stringify(payload(), null, 2);
+        updateSkinMap();
+        updateProfilePill();
       }
 
-      function metric(label, value) {
-        return `<div class="metric"><strong>${value ?? "-"}</strong><span>${label}</span></div>`;
-      }
-
-      function formatNumber(value) {
-        return Number(value || 0).toLocaleString("en-IN");
-      }
-
-      function updateCoverageHint() {
-        const mode = document.querySelector("#coverageMode").value;
-        document.querySelector("#coverageHint").textContent = coverageModes[mode] || coverageModes.all_pnc;
-      }
-
-      function thresholdCard(label, value) {
-        return `<div class="threshold-card"><strong>${formatNumber(value)}</strong><span>${label}</span></div>`;
-      }
-
-      function renderCoverageThresholdStrip(row) {
-        if (!row) return "";
-        return `
-          <div class="threshold-strip">
-            ${thresholdCard("Above 90", row.above_90)}
-            ${thresholdCard("Above 80", row.above_80)}
-            ${thresholdCard("Above 70", row.above_70)}
-            ${thresholdCard("Above 60", row.above_60)}
-            ${thresholdCard("Above 50", row.above_50)}
-          </div>
-        `;
+      function scoreRange(score) {
+        if (score >= 90) return "90_100";
+        if (score >= 80) return "80_89";
+        if (score >= 70) return "70_79";
+        if (score >= 60) return "60_69";
+        if (score >= 50) return "50_59";
+        return "below50";
       }
 
       function scoreBand(score) {
@@ -707,20 +1399,53 @@
         return { label: "Weak", className: "weak" };
       }
 
-      function coverageBand(status) {
-        if (status === "Strong") return { label: "Good", className: "Good" };
-        if (status === "Usable" || status === "Limited but usable") return { label: "Present", className: "Present" };
-        return { label: "Weak", className: "Weak" };
+      function rangeLabel(key) {
+        return {
+          "90_100": "90-100",
+          "80_89": "80-89",
+          "70_79": "70-79",
+          "60_69": "60-69",
+          "50_59": "50-59",
+          below50: "Below 50",
+        }[key] || "All";
+      }
+
+      function formatNumber(value) {
+        return Number(value || 0).toLocaleString("en-IN");
+      }
+
+      function formatPrice(product) {
+        const price = product.selling_price || product.mrp;
+        return price ? `Rs. ${escapeHtml(price)}` : "Price unavailable";
+      }
+
+      function productImage(product, className = "") {
+        if (!product.image) return `<div class="image-fallback ${className}">R</div>`;
+        return `<img class="${className}" src="${escapeHtml(product.image)}" alt="${escapeHtml(product.product_name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'image-fallback ${className}',textContent:'R'}))" />`;
+      }
+
+      function metric(label, value) {
+        return `<div class="metric"><strong>${formatNumber(value)}</strong><span>${label}</span></div>`;
       }
 
       function renderProductSummary(products) {
+        const counts = {
+          "90_100": 0,
+          "80_89": 0,
+          "70_79": 0,
+          "60_69": 0,
+          "50_59": 0,
+          below50: 0,
+        };
+        for (const product of products) counts[scoreRange(product.score)] += 1;
         document.querySelector("#summaryGrid").innerHTML = [
-          metric("Matches", `${products.length}/${currentTotalMatches}`),
-          metric("Above 90", products.filter((product) => product.score >= 90).length),
-          metric("Above 80", products.filter((product) => product.score >= 80).length),
-          metric("Above 70", products.filter((product) => product.score >= 70).length),
-          metric("Above 60", products.filter((product) => product.score >= 60).length),
-          metric("Above 50", products.filter((product) => product.score >= 50).length),
+          metric("Showing", products.length),
+          metric("90-100", counts["90_100"]),
+          metric("80-89", counts["80_89"]),
+          metric("70-79", counts["70_79"]),
+          metric("60-69", counts["60_69"]),
+          metric("50-59", counts["50_59"]),
+          metric("Below 50", counts.below50),
         ].join("");
       }
 
@@ -754,12 +1479,7 @@
         const sheetFilter = document.querySelector("#sheetFilter").value;
 
         return products.filter((product) => {
-          if (scoreFilter === "above90" && product.score < 90) return false;
-          if (scoreFilter === "above80" && product.score < 80) return false;
-          if (scoreFilter === "above70" && product.score < 70) return false;
-          if (scoreFilter === "above60" && product.score < 60) return false;
-          if (scoreFilter === "above50" && product.score < 50) return false;
-          if (scoreFilter === "below50" && product.score >= 50) return false;
+          if (scoreFilter !== "all" && scoreRange(product.score) !== scoreFilter) return false;
           if (categoryFilter !== "all" && product.category !== categoryFilter) return false;
           if (typeFilter !== "all" && product.product_type !== typeFilter) return false;
           if (sheetFilter !== "all" && product.source_sheet !== sheetFilter) return false;
@@ -773,11 +1493,6 @@
         renderProducts(products);
       }
 
-      function productImage(product) {
-        if (!product.image) return `<div class="image-fallback">R</div>`;
-        return `<img src="${product.image}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'image-fallback',textContent:'R'}))" />`;
-      }
-
       function renderProducts(products) {
         if (!products.length) {
           document.querySelector("#results").innerHTML = `<div class="empty">No matching catalog products found for this profile.</div>`;
@@ -788,34 +1503,55 @@
             ${products.map((product) => {
               const band = scoreBand(product.score);
               return `
-                <article class="product-card">
-                  ${productImage(product)}
-                  <div>
-                    <h3>${product.product_name}</h3>
-                    <p>${product.brand_name} · ${product.category} · ${product.product_type} · ${product.size || "Size unavailable"}</p>
-                    <p>${product.explanation}</p>
-                    <div class="tagline">
-                      <span class="tag">${band.label}</span>
-                      <span class="tag">${product.source_sheet}</span>
-                      <span class="tag">${product.when_to_use || "Routine"}</span>
-                      <span class="tag">₹${product.selling_price || product.mrp || "-"}</span>
+                <article class="product-card" data-product-uid="${escapeHtml(product.product_uid)}">
+                  <div class="product-image-wrap">
+                    ${productImage(product)}
+                    <div class="score-badge score-${band.className}">
+                      <div>${escapeHtml(product.score)}<small>${band.label}</small></div>
                     </div>
                   </div>
-                  <div class="score score-${band.className}">
-                    <strong>${product.score}</strong>
-                    <span>${band.label}</span>
+                  <div class="product-body">
+                    <div>
+                      <h3>${escapeHtml(product.product_name)}</h3>
+                      <p class="product-meta">${escapeHtml(product.brand_name)} · ${escapeHtml(product.category)} · ${escapeHtml(product.product_type)}</p>
+                    </div>
+                    <div class="price-row">
+                      <span>${formatPrice(product)}</span>
+                      ${product.mrp && product.selling_price && product.mrp !== product.selling_price ? `<del>Rs. ${escapeHtml(product.mrp)}</del>` : ""}
+                    </div>
+                    <p class="product-copy">${escapeHtml(shortExplanation(product.explanation))}</p>
+                    <div class="tagline">
+                      <span class="tag">${escapeHtml(rangeLabel(scoreRange(product.score)))}</span>
+                      <span class="tag">${escapeHtml(product.when_to_use || "Routine")}</span>
+                      <span class="tag">${escapeHtml(product.size || "Size unavailable")}</span>
+                    </div>
+                    <button class="details-link" type="button">View Details</button>
                   </div>
                 </article>
               `;
             }).join("")}
           </div>
         `;
+
+        document.querySelectorAll(".product-card").forEach((card) => {
+          card.addEventListener("click", () => openProductModal(card.dataset.productUid));
+        });
+      }
+
+      function shortExplanation(explanation) {
+        const text = String(explanation || "");
+        return text.length > 118 ? `${text.slice(0, 118)}...` : text;
+      }
+
+      function updateProfilePill() {
+        const concerns = [...state.selectedFaceBodyConcerns, ...state.selectedLipsEyesConcerns];
+        document.querySelector("#profilePill").textContent = `${state.selectedSkinType} · ${concerns.join(", ") || "No concern"}`;
       }
 
       async function recommend() {
         document.querySelector("#filters").style.display = "grid";
-        document.querySelector("#results").innerHTML = `<div class="empty">Calculating product matches...</div>`;
-        const response = await fetch("/api/recommend?limit=40", {
+        document.querySelector("#results").innerHTML = `<div class="empty">Loading Roopsee-style product preview...</div>`;
+        const response = await fetch("/api/recommend?limit=60", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload()),
@@ -823,69 +1559,72 @@
         currentProducts = response.products || [];
         currentTotalMatches = response.total_matches || currentProducts.length;
         populateFilters(currentProducts);
+        document.querySelector("#resultSubtitle").textContent = `${currentTotalMatches} matching catalog products found. Showing sorted product cards from Excel-backed scores.`;
         renderFilteredProducts();
       }
 
-      async function coverage() {
-        document.querySelector("#filters").style.display = "none";
-        const mode = document.querySelector("#coverageMode").value;
-        updateCoverageHint();
-        document.querySelector("#results").innerHTML = `<div class="empty">Running ${coverageModes[mode] || "coverage audit"}...</div>`;
-        const response = await fetch(`/api/coverage?mode=${encodeURIComponent(mode)}&top_n=3&row_limit=50`).then((res) => res.json());
-        document.querySelector("#summaryGrid").innerHTML = [
-          metric("Profiles", formatNumber(response.profile_count)),
-          metric("Good", formatNumber(response.status_counts?.Strong)),
-          metric("Present", formatNumber((response.status_counts?.Usable || 0) + (response.status_counts?.["Limited but usable"] || 0))),
-          metric("Weak", formatNumber(response.status_counts?.["Coverage gap"])),
-        ].join("");
-        const visibleRows = response.rows || [];
-        document.querySelector("#results").innerHTML = `
-          <div class="empty">
-            <strong>${response.mode_meta?.label || "Coverage Audit"}</strong><br />
-            ${response.mode_meta?.formula || coverageModes[mode] || ""}<br />
-            Showing weakest ${formatNumber(response.returned_rows || visibleRows.length)} of ${formatNumber(response.total_rows || response.profile_count)} calculated rows.
+      function scheduleRecommend() {
+        window.clearTimeout(recommendTimer);
+        recommendTimer = window.setTimeout(() => {
+          if (!completionState().hasConcern) return;
+          recommend();
+        }, 260);
+      }
+
+      function productByUid(uid) {
+        return currentProducts.find((product) => product.product_uid === uid);
+      }
+
+      function openProductModal(uid) {
+        const product = productByUid(uid);
+        if (!product) return;
+        const band = scoreBand(product.score);
+        const warnings = product.warnings?.length
+          ? `<div class="warnings">${product.warnings.map(escapeHtml).join("<br>")}</div>`
+          : "";
+        const components = product.component_scores?.length
+          ? product.component_scores.map((component) => `
+              <li>
+                <span>${escapeHtml(component.name)} <small>(${escapeHtml(component.source_column)})</small></span>
+                <strong>${escapeHtml(component.score)}</strong>
+              </li>
+            `).join("")
+          : `<li><span>No component scores returned</span><strong>-</strong></li>`;
+
+        document.querySelector("#modalContent").innerHTML = `
+          <div class="modal-image">${productImage(product)}</div>
+          <div class="modal-content">
+            <div class="modal-top">
+              <div>
+                <span class="tag">${escapeHtml(product.match_label)}</span>
+                <h2 id="modalTitle">${escapeHtml(product.product_name)}</h2>
+                <p>${escapeHtml(product.brand_name)} · ${escapeHtml(product.category)} · ${escapeHtml(product.product_type)}</p>
+              </div>
+              <button class="close-button" type="button" aria-label="Close product details">x</button>
+            </div>
+            <div class="detail-grid">
+              <div class="detail-box"><span>Score</span><strong class="score-${band.className}">${escapeHtml(product.score)} · ${band.label}</strong></div>
+              <div class="detail-box"><span>Price</span><strong>${formatPrice(product)}</strong></div>
+              <div class="detail-box"><span>Size</span><strong>${escapeHtml(product.size || "Unavailable")}</strong></div>
+              <div class="detail-box"><span>Use</span><strong>${escapeHtml(product.when_to_use || "Routine")}</strong></div>
+              <div class="detail-box"><span>Hero</span><strong>${escapeHtml(product.hero_ingredient || "Not listed")}</strong></div>
+              <div class="detail-box"><span>Source</span><strong>${escapeHtml(product.source_sheet)}</strong></div>
+            </div>
+            ${warnings}
+            <p><strong>Why this score:</strong> ${escapeHtml(product.explanation)}</p>
+            <p><strong>Secondary ingredients:</strong> ${escapeHtml(product.secondary_hero_ingredients || "Not listed")}</p>
+            <div class="section-title">Score components</div>
+            <ul class="component-list">${components}</ul>
           </div>
-          <div class="section-title">Weakest Row Product Counts</div>
-          ${renderCoverageThresholdStrip(visibleRows[0])}
-          <table>
-            <thead>
-              <tr>
-                <th>Status</th>
-                <th>Profile</th>
-                <th>Special State</th>
-                <th>Above 90</th>
-                <th>Above 80</th>
-                <th>Above 70</th>
-                <th>Above 60</th>
-                <th>Above 50</th>
-                <th>Top Products</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${visibleRows.map((row) => {
-                const band = coverageBand(row.status);
-                const profile = row.profile || {};
-                const scoringProfile = row.scoring_profile || profile;
-                const concerns = [...(profile.selectedFaceBodyConcerns || []), ...(profile.selectedLipsEyesConcerns || [])].join(", ");
-                const specialState = profile.specialConditionState || (profile.selectedSpecialConditions || []).join(", ") || "None";
-                const scoringSpecial = (scoringProfile.selectedSpecialConditions || []).join(", ") || "None";
-                return `
-                  <tr>
-                    <td><span class="status ${band.className}">${band.label}</span></td>
-                    <td>${profile.selectedSkinType}; ${profile.age}; ${profile.concernGroup || ""}; ${concerns}</td>
-                    <td>${specialState}<br><small>Scored as: ${scoringSpecial}</small></td>
-                    <td>${row.above_90}</td>
-                    <td>${row.above_80}</td>
-                    <td>${row.above_70}</td>
-                    <td>${row.above_60}</td>
-                    <td>${row.above_50}</td>
-                    <td>${row.top_products.map((product) => `${product.product_name} (${product.score})`).join("<br>")}</td>
-                  </tr>
-                `;
-              }).join("")}
-            </tbody>
-          </table>
         `;
+        document.querySelector(".close-button").addEventListener("click", closeProductModal);
+        document.querySelector("#productModal").classList.add("open");
+        document.querySelector("#productModal").setAttribute("aria-hidden", "false");
+      }
+
+      function closeProductModal() {
+        document.querySelector("#productModal").classList.remove("open");
+        document.querySelector("#productModal").setAttribute("aria-hidden", "true");
       }
 
       document.querySelectorAll(".tab").forEach((button) => {
@@ -899,17 +1638,22 @@
       document.querySelector("#genderSelect").addEventListener("change", () => {
         sanitizeSpecialState();
         render();
+        scheduleRecommend();
       });
-      document.querySelector("#coverageMode").addEventListener("change", updateCoverageHint);
+      document.querySelector("#ageSelect").addEventListener("change", scheduleRecommend);
       document.querySelector("#matchButton").addEventListener("click", recommend);
-      document.querySelector("#coverageButton").addEventListener("click", coverage);
       document.querySelector("#scoreFilter").addEventListener("change", renderFilteredProducts);
       document.querySelector("#categoryFilter").addEventListener("change", renderFilteredProducts);
       document.querySelector("#typeFilter").addEventListener("change", renderFilteredProducts);
       document.querySelector("#sheetFilter").addEventListener("change", renderFilteredProducts);
+      document.querySelector("#productModal").addEventListener("click", (event) => {
+        if (event.target.id === "productModal") closeProductModal();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeProductModal();
+      });
 
       render();
-      updateCoverageHint();
       recommend();
     </script>
   </body>

@@ -81,7 +81,7 @@ The included frontend is served from `/` and lets you:
 - submit the same JSON shape the app can send,
 - view product cards sorted by score,
 - filter returned products by score band, category, product type, and score sheet,
-- run the same PnC coverage modes used by the final workbook,
+- preview the Roopsee storefront-style product cards without auth, cart, or checkout,
 - see simple coverage colors: `Good` = green, `Present` = yellow, `Weak` = red.
 
 ## Code Structure
@@ -101,7 +101,10 @@ roopsee_coverage/
 tools/export_profile_coverage_workbook.py
 static/index.html              # Basic frontend tester
 notebooks/profile_score_coverage.ipynb
+docs/FUNCTION_REFERENCE.md     # Every function explained for handoff/review
 ```
+
+For a function-by-function walkthrough, see `docs/FUNCTION_REFERENCE.md`.
 
 ## Notebook
 
