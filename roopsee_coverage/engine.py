@@ -32,7 +32,7 @@ class RecommendationEngine:
             if key not in self.score_rows_by_catalog_key
         ]
 
-    def recommend(self, profile: dict[str, Any], limit: int = 60) -> dict[str, Any]:
+    def recommend(self, profile: dict[str, Any], limit: int = 250) -> dict[str, Any]:
         scoring_profile, profile_adjustments = sanitize_profile(profile)
         wanted_sheets = target_sheets(scoring_profile)
         best_by_uid: dict[str, dict[str, Any]] = {}

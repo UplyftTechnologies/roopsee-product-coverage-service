@@ -1035,7 +1035,7 @@
       async function recommend() {
         document.querySelector("#filters").style.display = "grid";
         document.querySelector("#results").innerHTML = `<div class="empty">Loading Roopsee-style product preview...</div>`;
-        const response = await fetch("/api/recommend?limit=60", {
+        const response = await fetch("/api/recommend?limit=250", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload()),
@@ -1043,7 +1043,7 @@
         currentProducts = response.products || [];
         currentTotalMatches = response.total_matches || currentProducts.length;
         populateFilters(currentProducts);
-        document.querySelector("#resultSubtitle").textContent = `${currentTotalMatches} matching catalog products found. Showing sorted product cards from Excel-backed scores.`;
+        document.querySelector("#resultSubtitle").textContent = `Showing ${currentProducts.length} of ${currentTotalMatches} matching catalog products from Excel-backed scores.`;
         renderFilteredProducts();
       }
 
