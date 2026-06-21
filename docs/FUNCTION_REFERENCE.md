@@ -190,7 +190,23 @@ Why it exists:
 - Each score sheet has slightly different header placement.
 - The scorer needs one consistent row model.
 
-### `load_score_rows(score_workbook)`
+### `parse_catalog_score_rows(products_csv)`
+
+Reads score columns directly from `products.csv` when the catalog CSV includes doctor-score columns.
+
+What it does:
+
+- Scans known face/body score columns such as `Acne`, `Dryness`, `Oily Score`, `Pregnancy Score`, and `Breastfeeling Score`.
+- Converts numeric score values into the same `ScoreRow` model used by workbook rows.
+- Uses the product catalog fields for product name, brand, hero ingredients, category, and product type.
+- Adds a `+>25` alias when the CSV uses `Above 25`, so the existing age scoring map still works.
+
+Why it exists:
+
+- The `New products list 19062026.xlsx` rows have score columns but their Product UIDs do not overlap with the older workbook.
+- Loading score-bearing catalog rows lets the tester recommend the new 239-product list without inventing scores or relying on mismatched old workbook rows.
+
+### `load_score_rows(score_workbook, products_csv=None)`
 
 Loads all score rows from the score workbook.
 
@@ -201,11 +217,13 @@ What it does:
   - `Face and body`
   - `Lips`
   - `Eyes`
+- Also appends score-bearing product CSV rows when `products_csv` is supplied.
 - Returns one combined list of `ScoreRow` objects.
 
 Why it exists:
 
 - The engine should not need to know Excel sheet row/header offsets.
+- New catalog uploads can carry their own doctor score columns while still using the same scoring engine.
 
 ## `roopsee_coverage/profile_rules.py`
 

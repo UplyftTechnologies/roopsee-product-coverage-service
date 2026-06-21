@@ -15,7 +15,7 @@ class RecommendationEngine:
         self.score_workbook = score_workbook
         self.products_csv = products_csv
         self.catalog = parse_catalog(products_csv)
-        self.score_rows = load_score_rows(score_workbook)
+        self.score_rows = load_score_rows(score_workbook, products_csv)
 
         self.score_rows_by_catalog_key: dict[str, list[Any]] = {}
         self.score_only_uids: list[str] = []

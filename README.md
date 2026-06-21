@@ -6,9 +6,11 @@ Small workbook/CSV-backed tester for checking whether the live catalog has enoug
 
 - `Product details and score logic.xlsx`: final doctor-backed score sheets.
 - `products.csv`: live products available to show on the site.
+- `New products list 19062026.xlsx`: uploaded source workbook used to create the current 239-product catalog.
 - Product UID matching is normalized, so `Roopsee/F/SU/13` and `Roopsee-F-SU-13` join correctly.
 
 Only products present in `products.csv` are returned to the frontend.
+If `products.csv` also contains score columns, those rows are loaded as face/body score rows. This is how the current 239-product list is integrated because its Product UIDs do not overlap with the older score workbook.
 
 ## Setup
 
@@ -144,7 +146,7 @@ The workbook also includes smaller subsheets for `Skin Concern Type` and `With S
 
 ## Scoring Logic
 
-The service does not invent weighted or decimal scores. For each product, it reads only the applicable score columns from the doctor workbook:
+The service does not invent weighted or decimal scores. For each product, it reads only the applicable score columns from the doctor workbook or from score-bearing catalog rows:
 
 - age fit score,
 - concern score,
@@ -159,4 +161,4 @@ The final ranking is for product coverage testing, not a replacement for doctor 
 
 ## Notes
 
-The workbook and CSV data files are intentionally not committed because they may contain operational catalog data. Keep them in a local `data/` folder or pass their paths through environment variables.
+The current repository includes the source workbook and normalized CSV used by the deployed tester. You can still override them locally with `SCORE_WORKBOOK_PATH` and `PRODUCTS_CSV_PATH`.

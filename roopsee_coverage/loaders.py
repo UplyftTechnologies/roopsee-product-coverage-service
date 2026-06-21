@@ -11,6 +11,39 @@ from .models import ScoreRow
 from .utils import clean_text, first_image, norm_key, safe_float
 
 
+CATALOG_SCORE_COLUMNS = [
+    "<16",
+    "17-25",
+    "Above 25",
+    "Acne",
+    "Body Acne",
+    "Dryness",
+    "Open Pores",
+    "Uneven Skin Tone",
+    "Dark Spots/Pigmentation",
+    "Melasma",
+    "Barrier Repair",
+    "Comedones",
+    "Wrinkles/Fine lines",
+    "Redness/Irritation",
+    "Dehydration",
+    "Dullness",
+    "Tanning",
+    "Concern weight",
+    "Oily Score",
+    "Oily+Sensitive Score",
+    "Dry Score",
+    "Dry+Sensitive Score",
+    "Normal Score",
+    "Normal+Sensitive Score",
+    "Combination Score",
+    "Combination+Sensitive Score",
+    "Excessive Dryness score",
+    "Pregnancy Score",
+    "Breastfeeling Score",
+]
+
+
 def parse_catalog(products_csv: Path) -> dict[str, dict[str, Any]]:
     products: dict[str, dict[str, Any]] = {}
     with products_csv.open(newline="", encoding="utf-8-sig") as handle:
@@ -37,6 +70,45 @@ def parse_catalog(products_csv: Path) -> dict[str, dict[str, Any]]:
                 "database_id": clean_text(row.get("id")),
             }
     return products
+
+
+def parse_catalog_score_rows(products_csv: Path) -> list[ScoreRow]:
+    rows: list[ScoreRow] = []
+    with products_csv.open(newline="", encoding="utf-8-sig") as handle:
+        for source_row, row in enumerate(csv.DictReader(handle), start=2):
+            uid = clean_text(row.get("product_uid"))
+            name = clean_text(row.get("product_name"))
+            if not uid or not name:
+                continue
+
+            scores: dict[str, float] = {}
+            for header in CATALOG_SCORE_COLUMNS:
+                score = safe_float(row.get(header))
+                if score is not None:
+                    scores[header] = score
+
+            above_25_score = scores.get("Above 25")
+            if above_25_score is not None and "+>25" not in scores:
+                scores["+>25"] = above_25_score
+
+            if not scores:
+                continue
+
+            rows.append(
+                ScoreRow(
+                    source_sheet=FACE_SHEET,
+                    product_uid=uid,
+                    product_name=name,
+                    brand=clean_text(row.get("brand_name")),
+                    hero_ingredient=clean_text(row.get("single_hero_ingredient")),
+                    secondary_ingredients=clean_text(row.get("secondary_hero_ingredients")),
+                    category=clean_text(row.get("category")),
+                    product_type=clean_text(row.get("product_type")),
+                    scores=scores,
+                    source_row=source_row,
+                )
+            )
+    return rows
 
 
 def parse_score_sheet(ws: Any, source_sheet: str, header_row: int, data_start_row: int) -> list[ScoreRow]:
@@ -74,10 +146,12 @@ def parse_score_sheet(ws: Any, source_sheet: str, header_row: int, data_start_ro
     return rows
 
 
-def load_score_rows(score_workbook: Path) -> list[ScoreRow]:
+def load_score_rows(score_workbook: Path, products_csv: Path | None = None) -> list[ScoreRow]:
     workbook = load_workbook(score_workbook, data_only=True, read_only=False)
     rows: list[ScoreRow] = []
     rows.extend(parse_score_sheet(workbook[FACE_SHEET], FACE_SHEET, header_row=2, data_start_row=3))
     rows.extend(parse_score_sheet(workbook[LIPS_SHEET], LIPS_SHEET, header_row=1, data_start_row=2))
     rows.extend(parse_score_sheet(workbook[EYES_SHEET], EYES_SHEET, header_row=1, data_start_row=2))
+    if products_csv is not None:
+        rows.extend(parse_catalog_score_rows(products_csv))
     return rows
