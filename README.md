@@ -5,12 +5,12 @@ Small workbook/CSV-backed tester for checking whether the live catalog has enoug
 ## What It Uses
 
 - `Product details and score logic.xlsx`: final doctor-backed score sheets.
-- `products.csv`: live products available to show on the site.
-- `New products list 19062026.xlsx`: uploaded source workbook used to create the current 239-product catalog.
+- `products.csv`: combined live catalog available to show on the site.
+- `New products list 19062026.xlsx`: uploaded source workbook used to add the latest 239 products.
 - Product UID matching is normalized, so `Roopsee/F/SU/13` and `Roopsee-F-SU-13` join correctly.
 
 Only products present in `products.csv` are returned to the frontend.
-If `products.csv` also contains score columns, those rows are loaded as face/body score rows. This is how the current 239-product list is integrated because its Product UIDs do not overlap with the older score workbook.
+If `products.csv` also contains score columns, those rows are loaded as face/body score rows. This is how the latest 239-product sheet is integrated alongside the older 156 products from the score workbook.
 
 ## Setup
 

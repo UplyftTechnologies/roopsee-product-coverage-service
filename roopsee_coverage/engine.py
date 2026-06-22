@@ -32,7 +32,7 @@ class RecommendationEngine:
             if key not in self.score_rows_by_catalog_key
         ]
 
-    def recommend(self, profile: dict[str, Any], limit: int = 250) -> dict[str, Any]:
+    def recommend(self, profile: dict[str, Any], limit: int = 500) -> dict[str, Any]:
         scoring_profile, profile_adjustments = sanitize_profile(profile)
         wanted_sheets = target_sheets(scoring_profile)
         best_by_uid: dict[str, dict[str, Any]] = {}
@@ -52,7 +52,7 @@ class RecommendationEngine:
             best_by_uid.values(),
             key=lambda item: (-item["score"], item["category"], item["product_name"].lower()),
         )
-        results = results[: max(1, min(limit, 250))]
+        results = results[: max(1, min(limit, 1000))]
         return {
             "profile": scoring_profile,
             "input_profile": profile,
@@ -97,7 +97,7 @@ class RecommendationEngine:
     def coverage_rows(self, profiles: list[dict[str, Any]], top_n: int = 0) -> list[dict[str, Any]]:
         rows = []
         for index, profile in enumerate(profiles, start=1):
-            response = self.recommend(profile, limit=250)
+            response = self.recommend(profile, limit=1000)
             summary = response["summary"]
             counts = threshold_counts(response["products"], THRESHOLDS)
             status = coverage_status(response["profile"], summary)

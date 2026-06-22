@@ -1035,7 +1035,7 @@
       async function recommend() {
         document.querySelector("#filters").style.display = "grid";
         document.querySelector("#results").innerHTML = `<div class="empty">Loading Roopsee-style product preview...</div>`;
-        const response = await fetch("/api/recommend?limit=250", {
+        const response = await fetch("/api/recommend?limit=500", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload()),

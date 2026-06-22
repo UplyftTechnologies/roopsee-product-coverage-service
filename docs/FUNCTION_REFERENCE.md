@@ -204,7 +204,7 @@ What it does:
 Why it exists:
 
 - The `New products list 19062026.xlsx` rows have score columns but their Product UIDs do not overlap with the older workbook.
-- Loading score-bearing catalog rows lets the tester recommend the new 239-product list without inventing scores or relying on mismatched old workbook rows.
+- Loading score-bearing catalog rows lets the tester recommend the latest 239 products alongside the older workbook-backed products without inventing scores or relying on mismatched old workbook rows.
 
 ### `load_score_rows(score_workbook, products_csv=None)`
 
@@ -657,7 +657,7 @@ Why it exists:
 
 - The rest of the app should ask the engine for recommendations, not repeatedly parse files.
 
-### `RecommendationEngine.recommend(profile, limit=60)`
+### `RecommendationEngine.recommend(profile, limit=500)`
 
 Returns scored products for one quiz profile.
 
@@ -668,7 +668,7 @@ What it does:
 3. Scores every matched score row in the catalog.
 4. Keeps the best score per product UID when a product appears in multiple sheets.
 5. Sorts products by score descending, then category, then product name.
-6. Caps return size between `1` and `250`.
+6. Caps return size between `1` and `1000`.
 7. Returns profile, adjustments, summary, and product list.
 
 Why it exists:
@@ -1375,7 +1375,7 @@ What it does:
 
 - Shows filters.
 - Displays a loading state.
-- POSTs `payload()` to `/api/recommend?limit=60`.
+- POSTs `payload()` to `/api/recommend?limit=500`.
 - Stores returned products in `currentProducts`.
 - Stores `total_matches`.
 - Populates filters.
