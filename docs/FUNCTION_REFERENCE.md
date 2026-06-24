@@ -6,16 +6,16 @@ The service has four main layers:
 
 1. Data loading: read `products.csv` and the doctor score workbook.
 2. Profile rules: clean invalid quiz choices before scoring.
-3. Scoring engine: calculate a conservative score by taking the lowest applicable doctor-sheet score.
+3. Scoring engine: calculate a displayed score by taking the rounded average of applicable doctor-sheet scores.
 4. Frontend tester: let a tester change the quiz profile and preview the product cards users would see.
 
 Core scoring principle:
 
 ```python
-final_score = min((component["score"] for component in components), default=0)
+final_score = rounded_average_score(components)
 ```
 
-This means the service does not average scores and does not invent decimal scores. If any selected profile criterion is weak for a product, the product cannot hide that weakness behind a higher score from another column.
+This means the service reads only sheet-backed component scores, averages the applicable components, and rounds the displayed score to a whole number.
 
 ## `app.py`
 
@@ -498,6 +498,21 @@ Why it exists:
 
 - The UI should show clean integer scores when the sheet has integer values.
 
+### `rounded_average_score(components)`
+
+Calculates the displayed product score from applicable component scores.
+
+What it does:
+
+- Reads every applicable component score.
+- Returns `0` when no components are available.
+- Averages the component scores.
+- Rounds the average to the nearest whole number for display and ranking.
+
+Why it exists:
+
+- The tool should show one score per product/profile while still exposing all source component scores in product details.
+
 ### `map_special_columns(row, special_conditions)`
 
 Maps selected special conditions to score columns on a product row.
@@ -577,7 +592,7 @@ What it does:
 4. Adds skin-type score for face/body rows.
 5. Adds special-condition scores.
 6. Adds warnings for negative safety scores.
-7. Uses the lowest component score as the final score.
+7. Uses the rounded average of component scores as the final score.
 8. Builds a product response object using live catalog data first, then score-sheet fallbacks.
 
 Why it exists:
@@ -587,7 +602,7 @@ Why it exists:
 Key snippet:
 
 ```python
-final_score = min((component["score"] for component in components), default=0)
+final_score = rounded_average_score(components)
 label = label_for_score(final_score)
 ```
 

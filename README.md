@@ -146,14 +146,14 @@ The workbook also includes smaller subsheets for `Skin Concern Type` and `With S
 
 ## Scoring Logic
 
-The service does not invent weighted or decimal scores. For each product, it reads only the applicable score columns from the doctor workbook or from score-bearing catalog rows:
+The service does not invent new source scores. For each product, it reads only the applicable score columns from the doctor workbook or from score-bearing catalog rows:
 
 - age fit score,
 - concern score,
 - skin-type score for face/body products,
 - special-condition safety score.
 
-The displayed product score is the lowest applicable doctor-sheet score for the selected profile. This keeps the ranking conservative: if a product is weak or unsafe for any selected criterion, it cannot be hidden by a higher score from another column.
+The displayed product score is the rounded average of all applicable doctor-sheet scores for the selected profile.
 
 If `selectedGender` is `male`, pregnancy and breastfeeding conditions are ignored before scoring and are not generated in representative coverage profiles.
 

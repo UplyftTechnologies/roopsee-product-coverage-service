@@ -49,6 +49,16 @@ def sheet_score(value: float) -> int | float:
     return int(value) if float(value).is_integer() else value
 
 
+def rounded_average_score(components: list[dict[str, Any]]) -> int:
+    scores = [float(component["score"]) for component in components]
+    if not scores:
+        return 0
+    average = sum(scores) / len(scores)
+    if average >= 0:
+        return int(average + 0.5)
+    return int(average - 0.5)
+
+
 def map_special_columns(row: ScoreRow, special_conditions: list[str]) -> list[tuple[str, str, float]]:
     conditions = [norm_label(item) for item in special_conditions if norm_label(item)]
     if not conditions or conditions == ["none"] or ("none" in conditions and len(conditions) == 1):
@@ -154,13 +164,13 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
         if value < 0:
             warnings.append("Safety conflict with selected pregnancy/breastfeeding condition.")
 
-    final_score = min((component["score"] for component in components), default=0)
+    final_score = rounded_average_score(components)
     label = label_for_score(final_score)
     used_columns = "; ".join(
         f"{component['name']} [{component['source_column']}]: {component['score']}" for component in components[:6]
     )
     explanation = (
-        f"{label}: score is the lowest applicable doctor-sheet score for this profile. "
+        f"{label}: score is the rounded average of applicable doctor-sheet scores for this profile. "
         f"Used {used_columns or 'no matching score columns'}. "
         "Only products present in the live catalog CSV are returned."
     )
@@ -186,7 +196,7 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
         "when_to_use": catalog["when_to_use"],
         "image": catalog["image"],
         "component_scores": components,
-        "score_basis": "minimum_applicable_doctor_sheet_score",
+        "score_basis": "rounded_average_applicable_doctor_sheet_scores",
         "score_reasons": reasons,
         "warnings": warnings,
     }

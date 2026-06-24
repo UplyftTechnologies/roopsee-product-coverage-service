@@ -226,7 +226,7 @@ def write_assumptions(wb: Workbook, assumptions: dict[str, Any]) -> None:
     ws = wb.create_sheet("Assumptions")
     rows = [
         ("Rule", "Value"),
-        ("Scoring basis", "Lowest applicable doctor-sheet score; no weighted or decimal score is generated."),
+        ("Scoring basis", "Rounded average of applicable doctor-sheet scores; source component scores remain sheet-backed."),
         ("Returned products", "Only products present in products.csv and matched by Product UID."),
         ("Gender", "Removed from final combination grid."),
         ("PnC formula", assumptions["formula"]),
