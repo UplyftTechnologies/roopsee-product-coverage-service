@@ -6,7 +6,7 @@ The service has four main layers:
 
 1. Data loading: read `products.csv` and the doctor score workbook.
 2. Profile rules: clean invalid quiz choices before scoring.
-3. Scoring engine: calculate a displayed score by taking the rounded average of applicable doctor-sheet scores, while preserving `-100` hard blockers.
+3. Scoring engine: calculate a product-type-aware displayed score while preserving `-100` hard blockers.
 4. Frontend tester: let a tester change the quiz profile and preview the product cards users would see.
 
 Core scoring principle:
@@ -15,7 +15,7 @@ Core scoring principle:
 final_score = rounded_average_score(components)
 ```
 
-This means the service reads only sheet-backed component scores, averages the applicable components, and rounds the displayed score to a whole number. If any component is `-100`, the final score remains `-100`.
+This means the service reads only sheet-backed component scores, chooses applicable components by product type, averages them, and rounds the displayed score to a whole number. If any component is `-100`, the final score remains `-100`.
 
 ## `app.py`
 
@@ -586,11 +586,11 @@ Scores one doctor-sheet row against one sanitized profile.
 
 What it does:
 
-1. Adds age score if the selected age maps to a sheet column.
-2. Adds concern score components.
-3. Adds a general `None` score when no concern pairs exist.
-4. Adds skin-type score for face/body rows.
-5. Adds special-condition scores.
+1. Applies the product-type scoring rule.
+2. Adds age score if the selected age maps to a sheet column and the product type uses age.
+3. Adds concern score components only for product types that use concerns.
+4. Adds skin-type score for face/body rows when the product type uses skin type.
+5. Adds special-condition scores, with `None` as `100` and Excessive Dryness bucketed as `-100/0/100`.
 6. Adds warnings for negative safety scores.
 7. Uses the rounded average of component scores as the final score unless a component is `-100`, which becomes a hard blocker.
 8. Builds a product response object using live catalog data first, then score-sheet fallbacks.

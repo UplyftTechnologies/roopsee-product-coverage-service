@@ -63,9 +63,14 @@ def parse_catalog(products_csv: Path) -> dict[str, dict[str, Any]]:
                 "sp": clean_text(row.get("sp")),
                 "single_hero_ingredient": clean_text(row.get("single_hero_ingredient")),
                 "secondary_hero_ingredients": clean_text(row.get("secondary_hero_ingredients")),
+                "dos": clean_text(row.get("dos")),
+                "donts": clean_text(row.get("donts")),
+                "storage_instructions": clean_text(row.get("storage_instructions")),
+                "usage_instructions": clean_text(row.get("usage_instructions")),
                 "when_to_use": clean_text(row.get("when_to_use")),
                 "ingredient_cautions": clean_text(row.get("ingredient_cautions")),
                 "product_description": clean_text(row.get("product_description")),
+                "ingredients": clean_text(row.get("ingredients")),
                 "image": first_image(row.get("images", "")),
                 "database_id": clean_text(row.get("id")),
             }
@@ -148,10 +153,14 @@ def parse_score_sheet(ws: Any, source_sheet: str, header_row: int, data_start_ro
 
 def load_score_rows(score_workbook: Path, products_csv: Path | None = None) -> list[ScoreRow]:
     workbook = load_workbook(score_workbook, data_only=True, read_only=False)
-    rows: list[ScoreRow] = []
-    rows.extend(parse_score_sheet(workbook[FACE_SHEET], FACE_SHEET, header_row=2, data_start_row=3))
-    rows.extend(parse_score_sheet(workbook[LIPS_SHEET], LIPS_SHEET, header_row=1, data_start_row=2))
-    rows.extend(parse_score_sheet(workbook[EYES_SHEET], EYES_SHEET, header_row=1, data_start_row=2))
+    workbook_rows: list[ScoreRow] = []
+    workbook_rows.extend(parse_score_sheet(workbook[FACE_SHEET], FACE_SHEET, header_row=2, data_start_row=3))
+    workbook_rows.extend(parse_score_sheet(workbook[LIPS_SHEET], LIPS_SHEET, header_row=1, data_start_row=2))
+    workbook_rows.extend(parse_score_sheet(workbook[EYES_SHEET], EYES_SHEET, header_row=1, data_start_row=2))
+    catalog_rows: list[ScoreRow] = []
     if products_csv is not None:
-        rows.extend(parse_catalog_score_rows(products_csv))
+        catalog_rows = parse_catalog_score_rows(products_csv)
+    catalog_keys = {norm_key(row.product_uid) for row in catalog_rows}
+    rows = [row for row in workbook_rows if norm_key(row.product_uid) not in catalog_keys]
+    rows.extend(catalog_rows)
     return rows

@@ -13,6 +13,7 @@ data/*.csv
 # Published review workbooks.
 !data/Product details and score logic.xlsx
 !data/New products list 19062026.xlsx
+!data/New products list 25062026.xlsx
 !data/products.csv
 !outputs/Roopsee_Full_Profile_Coverage_Final.xlsx
 

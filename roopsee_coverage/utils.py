@@ -38,4 +38,6 @@ def first_image(raw: str) -> str:
             return clean_text(parsed[0])
     except json.JSONDecodeError:
         pass
+    if "," in raw:
+        return clean_text(raw.split(",", 1)[0])
     return raw

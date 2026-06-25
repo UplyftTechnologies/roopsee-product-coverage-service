@@ -5,12 +5,12 @@ Small workbook/CSV-backed tester for checking whether the live catalog has enoug
 ## What It Uses
 
 - `Product details and score logic.xlsx`: final doctor-backed score sheets.
-- `products.csv`: combined live catalog available to show on the site.
-- `New products list 19062026.xlsx`: uploaded source workbook used to add the latest 239 products.
+- `products.csv`: normalized live catalog available to show on the site.
+- `New products list 25062026.xlsx`: uploaded source workbook used to generate the current 390-product catalog.
 - Product UID matching is normalized, so `Roopsee/F/SU/13` and `Roopsee-F-SU-13` join correctly.
 
 Only products present in `products.csv` are returned to the frontend.
-If `products.csv` also contains score columns, those rows are loaded as face/body score rows. This is how the latest 239-product sheet is integrated alongside the older 156 products from the score workbook.
+If `products.csv` contains score columns, those rows are loaded as the authoritative face/body score rows for matching product UIDs.
 
 ## Setup
 
@@ -65,6 +65,7 @@ The routine object chooses the highest scored product for each slot in the curre
 - Day: cleanser, serum, moisturiser, sunscreen.
 - Night: cleanser, serum, moisturiser.
 - If multiple products have the same score for a slot, any one tied product can be used.
+- Serums become night-only for under-16, dry/sensitive, pregnancy, breastfeeding, or any active special-condition profile.
 
 ### `POST /api/routine`
 
@@ -163,7 +164,14 @@ The service does not invent new source scores. For each product, it reads only t
 - skin-type score for face/body products,
 - special-condition safety score.
 
-The displayed product score is the rounded average of all applicable doctor-sheet scores for the selected profile. If any applicable component score is `-100`, that value is treated as a hard blocker and the final product score stays `-100` instead of being averaged away.
+The displayed product score is product-type aware:
+
+- Serums and cleansers average skin type, selected concerns, age, and special condition. If special condition is `None`, the special-condition component is `100`.
+- Moisturisers and sunscreens ignore concern scores and average skin type, age, and special condition.
+- Excessive Dryness preserves existing `-100/0/100` bucketed scores. If a raw Monika rating appears instead, it is converted as `<=50 => -100`, `51-84 => 0`, and `>=85 => 100`.
+- Any applicable `-100` component is a hard blocker and the final product score stays `-100` instead of being averaged away.
+
+Retinoid products are night-only. If a retinoid product is suggested for Aging, under-16, dry/sensitive, or special-condition profiles, the response includes sandwich-method instructions: moisturiser before retinol and moisturiser again after retinol.
 
 If `selectedGender` is `male`, pregnancy and breastfeeding conditions are ignored before scoring and are not generated in representative coverage profiles.
 

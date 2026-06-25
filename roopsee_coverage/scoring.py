@@ -27,6 +27,23 @@ def is_sensitive_profile(profile: dict[str, Any]) -> bool:
     return any(item in {"sensitivity", "sensitive eye", "sensitive eyes"} for item in face_concerns + lips_eye)
 
 
+def is_under_16_profile(profile: dict[str, Any]) -> bool:
+    return age_column(clean_text(profile.get("age", ""))) == "<16"
+
+
+def has_active_special_condition(profile: dict[str, Any]) -> bool:
+    conditions = [norm_label(item) for item in profile.get("selectedSpecialConditions", []) if norm_label(item)]
+    return bool(conditions) and conditions != ["none"]
+
+
+def is_dry_or_sensitive_profile(profile: dict[str, Any]) -> bool:
+    return norm_label(profile.get("selectedSkinType", "")) == "dry" or is_sensitive_profile(profile)
+
+
+def profile_has_aging(profile: dict[str, Any]) -> bool:
+    return any(norm_label(item) == "aging" for item in profile.get("selectedFaceBodyConcerns", []))
+
+
 def skin_column(skin_type: str, sensitive: bool) -> str:
     base = clean_text(skin_type).title()
     if base not in {"Oily", "Dry", "Normal", "Combination"}:
@@ -61,11 +78,92 @@ def rounded_average_score(components: list[dict[str, Any]]) -> int:
     return int(average - 0.5)
 
 
+def transformed_excessive_dryness_score(value: float) -> int:
+    if value in {-100, 0, 100}:
+        return int(value)
+    if value <= 50:
+        return -100
+    if value <= 84:
+        return 0
+    return 100
+
+
+def normalized_product_type(value: str) -> str:
+    product_type = clean_text(value).lower()
+    if product_type in {"moisturiser", "moisturizer", "cream", "lotion"}:
+        return "moisturizer"
+    if product_type in {"cleanser", "wash", "body wash"}:
+        return "cleanser"
+    if product_type == "seru":
+        return "serum"
+    return product_type
+
+
+def scoring_rule_for_product_type(product_type: str) -> dict[str, bool]:
+    normalized = normalized_product_type(product_type)
+    if normalized in {"moisturizer", "sunscreen"}:
+        return {"age": True, "concern": False, "skin": True, "special": True}
+    return {"age": True, "concern": True, "skin": True, "special": True}
+
+
+def product_text(row: ScoreRow, catalog: dict[str, Any]) -> str:
+    return " ".join(
+        [
+            catalog.get("product_name") or row.product_name,
+            catalog.get("single_hero_ingredient") or row.hero_ingredient,
+            catalog.get("secondary_hero_ingredients") or row.secondary_ingredients,
+            catalog.get("ingredients", ""),
+        ]
+    ).lower()
+
+
+def is_retinoid_product(row: ScoreRow, catalog: dict[str, Any]) -> bool:
+    text = product_text(row, catalog)
+    return any(token in text for token in ["retinol", "retinal", "retinoid", "retinyl", "tretinoin", "adapalene"])
+
+
+def serum_is_night_only_for_profile(product_type: str, profile: dict[str, Any]) -> bool:
+    if normalized_product_type(product_type) != "serum":
+        return False
+    special_conditions = [norm_label(item) for item in profile.get("selectedSpecialConditions", [])]
+    has_pregnancy_or_breastfeeding = any(item in {"pregnant", "breastfeeding"} for item in special_conditions)
+    return (
+        has_pregnancy_or_breastfeeding
+        or is_under_16_profile(profile)
+        or is_dry_or_sensitive_profile(profile)
+        or has_active_special_condition(profile)
+    )
+
+
+def recommended_when_to_use(row: ScoreRow, catalog: dict[str, Any], profile: dict[str, Any]) -> str:
+    product_type = catalog.get("product_type") or row.product_type
+    if serum_is_night_only_for_profile(product_type, profile) or is_retinoid_product(row, catalog):
+        return "Night"
+    return catalog.get("when_to_use") or "Morning and Night"
+
+
+def routine_notes(row: ScoreRow, catalog: dict[str, Any], profile: dict[str, Any]) -> list[str]:
+    notes: list[str] = []
+    product_type = catalog.get("product_type") or row.product_type
+    if serum_is_night_only_for_profile(product_type, profile):
+        notes.append("For this profile, suggest this serum only at night.")
+    if is_retinoid_product(row, catalog):
+        notes.append("Use only at night and pair with sunscreen the next morning.")
+        needs_sandwich = (
+            profile_has_aging(profile)
+            or is_under_16_profile(profile)
+            or is_dry_or_sensitive_profile(profile)
+            or has_active_special_condition(profile)
+        )
+        if needs_sandwich:
+            notes.append("Use the sandwich method: apply moisturiser before retinol and again after retinol.")
+    return notes
+
+
 def map_special_columns(row: ScoreRow, special_conditions: list[str]) -> list[tuple[str, str, float]]:
     conditions = [norm_label(item) for item in special_conditions if norm_label(item)]
     if not conditions or conditions == ["none"] or ("none" in conditions and len(conditions) == 1):
-        none_value = row.scores.get("None")
-        return [("None", "None", none_value)] if none_value is not None else []
+        return [("None", "None", 100)]
 
     mapped: list[tuple[str, str, float]] = []
     if "pregnant" in conditions:
@@ -86,7 +184,7 @@ def map_special_columns(row: ScoreRow, special_conditions: list[str]) -> list[tu
             matched = first_available_score(row, ["Dry/Dehydrated Under Eyes"])
         if matched:
             header, value = matched
-            mapped.append(("Excessive Dryness", header, value))
+            mapped.append(("Excessive Dryness", header, transformed_excessive_dryness_score(value)))
     return mapped
 
 
@@ -135,36 +233,38 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
     components: list[dict[str, Any]] = []
     reasons: list[str] = []
     warnings: list[str] = []
+    product_type = catalog["product_type"] or row.product_type
+    rule = scoring_rule_for_product_type(product_type)
 
     age_header = age_column(clean_text(profile.get("age", "")))
     age_score = row.scores.get(age_header) if age_header else None
-    if age_header and age_score is not None:
+    if rule["age"] and age_header and age_score is not None:
         components.append({"name": f"Age {age_header}", "score": sheet_score(age_score), "source_column": age_header})
         reasons.append(f"Age fit {age_header}: {age_score:g}")
 
-    concern_pairs = concern_headers_for_row(row, profile)
+    concern_pairs = concern_headers_for_row(row, profile) if rule["concern"] else []
     for concern, headers in concern_pairs:
         matched = first_available_score(row, headers)
         if matched:
             header, value = matched
             components.append({"name": concern, "score": sheet_score(value), "source_column": header})
             reasons.append(f"{concern} via {header}: {value:g}")
-    if not concern_pairs and row.scores.get("None") is not None:
+    if rule["concern"] and not concern_pairs and row.scores.get("None") is not None:
         components.append({"name": "General fit", "score": sheet_score(row.scores["None"]), "source_column": "None"})
 
-    if row.source_sheet == FACE_SHEET:
+    if rule["skin"] and row.source_sheet == FACE_SHEET:
         skin_header = skin_column(clean_text(profile.get("selectedSkinType", "Normal")), is_sensitive_profile(profile))
         skin_score = row.scores.get(skin_header)
         if skin_score is not None:
             components.append({"name": skin_header, "score": sheet_score(skin_score), "source_column": skin_header})
             reasons.append(f"{skin_header}: {skin_score:g}")
 
-    special_pairs = map_special_columns(row, profile.get("selectedSpecialConditions", []))
+    special_pairs = map_special_columns(row, profile.get("selectedSpecialConditions", [])) if rule["special"] else []
     for label, source_column, value in special_pairs:
         components.append({"name": label, "score": sheet_score(value), "source_column": source_column})
         reasons.append(f"{label}: {value:g}")
         if value < 0:
-            warnings.append("Safety conflict with selected pregnancy/breastfeeding condition.")
+            warnings.append(f"{label} has a hard-blocker score for this profile.")
 
     final_score = rounded_average_score(components)
     label = label_for_score(final_score)
@@ -187,6 +287,8 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
         explanation = (
             f"{label}: score is the rounded average of applicable doctor-sheet scores for this profile. "
             f"Used {used_columns or 'no matching score columns'}. "
+            f"Product-type rule: {clean_text(product_type) or 'Unknown'} uses "
+            f"{', '.join(key for key, enabled in rule.items() if enabled)} components. "
             "Only products present in the live catalog CSV are returned."
         )
     if warnings:
@@ -198,7 +300,7 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
         "product_name": catalog["product_name"] or row.product_name,
         "brand_name": catalog["brand_name"] or row.brand,
         "category": catalog["category"] or row.category,
-        "product_type": catalog["product_type"] or row.product_type,
+        "product_type": product_type,
         "score": final_score,
         "match_label": label,
         "explanation": explanation,
@@ -208,10 +310,16 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
         "size": catalog["sku_size"],
         "mrp": catalog["mrp"],
         "selling_price": catalog["sp"],
-        "when_to_use": catalog["when_to_use"],
+        "base_when_to_use": catalog["when_to_use"],
+        "when_to_use": recommended_when_to_use(row, catalog, profile),
+        "dos": catalog.get("dos", ""),
+        "donts": catalog.get("donts", ""),
+        "usage_instructions": catalog.get("usage_instructions", ""),
+        "ingredients": catalog.get("ingredients", ""),
+        "routine_notes": routine_notes(row, catalog, profile),
         "image": catalog["image"],
         "component_scores": components,
-        "score_basis": "hard_blocker_or_rounded_average_applicable_doctor_sheet_scores",
+        "score_basis": "product_type_rule_with_hard_blocker_or_rounded_average",
         "score_reasons": reasons,
         "warnings": warnings,
     }

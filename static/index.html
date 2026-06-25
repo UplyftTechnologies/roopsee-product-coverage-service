@@ -1348,6 +1348,9 @@
         const warnings = product.warnings?.length
           ? `<div class="warnings">${product.warnings.map(escapeHtml).join("<br>")}</div>`
           : "";
+        const routineNotes = product.routine_notes?.length
+          ? `<div class="warnings">${product.routine_notes.map(escapeHtml).join("<br>")}</div>`
+          : "";
         const components = product.component_scores?.length
           ? product.component_scores.map((component) => `
               <li>
@@ -1377,7 +1380,9 @@
               <div class="detail-box"><span>Source</span><strong>${escapeHtml(product.source_sheet)}</strong></div>
             </div>
             ${warnings}
+            ${routineNotes}
             <p><strong>Why this score:</strong> ${escapeHtml(product.explanation)}</p>
+            ${product.usage_instructions ? `<p><strong>Usage:</strong> ${escapeHtml(product.usage_instructions)}</p>` : ""}
             <p><strong>Secondary ingredients:</strong> ${escapeHtml(product.secondary_hero_ingredients || "Not listed")}</p>
             <div class="section-title">Score components</div>
             <ul class="component-list">${components}</ul>
