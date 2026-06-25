@@ -6,7 +6,7 @@ The service has four main layers:
 
 1. Data loading: read `products.csv` and the doctor score workbook.
 2. Profile rules: clean invalid quiz choices before scoring.
-3. Scoring engine: calculate a displayed score by taking the rounded average of applicable doctor-sheet scores.
+3. Scoring engine: calculate a displayed score by taking the rounded average of applicable doctor-sheet scores, while preserving `-100` hard blockers.
 4. Frontend tester: let a tester change the quiz profile and preview the product cards users would see.
 
 Core scoring principle:
@@ -15,7 +15,7 @@ Core scoring principle:
 final_score = rounded_average_score(components)
 ```
 
-This means the service reads only sheet-backed component scores, averages the applicable components, and rounds the displayed score to a whole number.
+This means the service reads only sheet-backed component scores, averages the applicable components, and rounds the displayed score to a whole number. If any component is `-100`, the final score remains `-100`.
 
 ## `app.py`
 
@@ -592,7 +592,7 @@ What it does:
 4. Adds skin-type score for face/body rows.
 5. Adds special-condition scores.
 6. Adds warnings for negative safety scores.
-7. Uses the rounded average of component scores as the final score.
+7. Uses the rounded average of component scores as the final score unless a component is `-100`, which becomes a hard blocker.
 8. Builds a product response object using live catalog data first, then score-sheet fallbacks.
 
 Why it exists:

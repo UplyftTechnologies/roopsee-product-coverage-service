@@ -53,6 +53,8 @@ def rounded_average_score(components: list[dict[str, Any]]) -> int:
     scores = [float(component["score"]) for component in components]
     if not scores:
         return 0
+    if any(score <= -100 for score in scores):
+        return -100
     average = sum(scores) / len(scores)
     if average >= 0:
         return int(average + 0.5)
@@ -166,14 +168,27 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
 
     final_score = rounded_average_score(components)
     label = label_for_score(final_score)
+    hard_blockers = [component for component in components if float(component["score"]) <= -100]
     used_columns = "; ".join(
         f"{component['name']} [{component['source_column']}]: {component['score']}" for component in components[:6]
     )
-    explanation = (
-        f"{label}: score is the rounded average of applicable doctor-sheet scores for this profile. "
-        f"Used {used_columns or 'no matching score columns'}. "
-        "Only products present in the live catalog CSV are returned."
-    )
+    if hard_blockers:
+        blocked_columns = "; ".join(
+            f"{component['name']} [{component['source_column']}]: {component['score']}" for component in hard_blockers[:3]
+        )
+        explanation = (
+            f"{label}: this product has a hard blocker for this profile, so the final score is -100. "
+            f"Blocked by {blocked_columns}. "
+            f"Used {used_columns or 'no matching score columns'}. "
+            "Only products present in the live catalog CSV are returned."
+        )
+        warnings.append("Hard blocker score found for this profile.")
+    else:
+        explanation = (
+            f"{label}: score is the rounded average of applicable doctor-sheet scores for this profile. "
+            f"Used {used_columns or 'no matching score columns'}. "
+            "Only products present in the live catalog CSV are returned."
+        )
     if warnings:
         explanation = f"{warnings[0]} {explanation}"
 
@@ -196,7 +211,7 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
         "when_to_use": catalog["when_to_use"],
         "image": catalog["image"],
         "component_scores": components,
-        "score_basis": "rounded_average_applicable_doctor_sheet_scores",
+        "score_basis": "hard_blocker_or_rounded_average_applicable_doctor_sheet_scores",
         "score_reasons": reasons,
         "warnings": warnings,
     }

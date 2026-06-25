@@ -904,7 +904,7 @@
         <div class="studio-toolbar">
           <div class="studio-title">
             <h2>Recommended for this profile</h2>
-            <p id="resultSubtitle">Products are sorted by the rounded average doctor-sheet score.</p>
+            <p id="resultSubtitle">Products are sorted by doctor-sheet score, with -100 treated as a hard blocker.</p>
           </div>
           <div class="profile-pill" id="profilePill">Oily · Acne, Dark Spots</div>
         </div>
@@ -1293,7 +1293,7 @@
           document.querySelector("#resultSubtitle").textContent = "Routine picks use the highest scored product in each slot for this profile. If scores tie, any one tied product is acceptable.";
           return;
         }
-        document.querySelector("#resultSubtitle").textContent = `Showing ${currentProducts.length} of ${currentTotalMatches} matching catalog products from Excel-backed scores.`;
+        document.querySelector("#resultSubtitle").textContent = `Showing ${currentProducts.length} of ${currentTotalMatches} matching catalog products from Excel-backed scores. Any -100 component stays a hard blocker.`;
       }
 
       function shortExplanation(explanation) {

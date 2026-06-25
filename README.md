@@ -163,7 +163,7 @@ The service does not invent new source scores. For each product, it reads only t
 - skin-type score for face/body products,
 - special-condition safety score.
 
-The displayed product score is the rounded average of all applicable doctor-sheet scores for the selected profile.
+The displayed product score is the rounded average of all applicable doctor-sheet scores for the selected profile. If any applicable component score is `-100`, that value is treated as a hard blocker and the final product score stays `-100` instead of being averaged away.
 
 If `selectedGender` is `male`, pregnancy and breastfeeding conditions are ignored before scoring and are not generated in representative coverage profiles.
 
