@@ -242,6 +242,38 @@
         white-space: nowrap;
       }
 
+      .view-tabs {
+        display: inline-grid;
+        grid-template-columns: 1fr 1fr;
+        overflow: hidden;
+        border: 1px solid rgba(194, 85, 168, 0.24);
+        border-radius: 999px;
+        background: #fff;
+        margin-bottom: 16px;
+        padding: 4px;
+      }
+
+      .view-tab {
+        min-width: 128px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: #7a6d82;
+        padding: 10px 16px;
+        font-size: 0.86rem;
+        font-weight: 950;
+      }
+
+      .view-tab.active {
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .products-view[hidden],
+      .routine-view[hidden] {
+        display: none;
+      }
+
       .summary-grid {
         display: grid;
         grid-template-columns: repeat(7, minmax(95px, 1fr));
@@ -295,6 +327,126 @@
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
+      }
+
+      .routine-board {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .routine-column {
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        background:
+          radial-gradient(circle at 14% 0%, rgba(194, 85, 168, 0.12), transparent 14rem),
+          #fff;
+        padding: 16px;
+      }
+
+      .routine-column h3 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.45rem;
+        letter-spacing: -0.035em;
+      }
+
+      .routine-column > p {
+        margin: 7px 0 14px;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+
+      .routine-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .routine-card {
+        display: grid;
+        grid-template-columns: 84px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        border: 1px solid rgba(232, 223, 232, 0.95);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.86);
+        padding: 10px;
+        transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+      }
+
+      .routine-card[data-product-uid]:hover {
+        transform: translateY(-2px);
+        border-color: rgba(194, 85, 168, 0.36);
+        box-shadow: 0 16px 28px rgba(77, 57, 72, 0.1);
+      }
+
+      .routine-card.routine-missing {
+        grid-template-columns: minmax(0, 1fr);
+        border-style: dashed;
+        color: var(--muted);
+      }
+
+      .routine-image {
+        position: relative;
+        overflow: hidden;
+        width: 84px;
+        aspect-ratio: 1 / 1;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #f6e8f1, #fff6ea);
+      }
+
+      .routine-image img,
+      .routine-image .image-fallback {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .routine-step {
+        display: inline-flex;
+        width: fit-content;
+        margin-bottom: 5px;
+        border-radius: 999px;
+        background: #f7f0f7;
+        color: var(--rose-dark);
+        padding: 4px 8px;
+        font-size: 0.67rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .routine-card h4 {
+        margin: 0;
+        font-size: 0.96rem;
+        line-height: 1.2;
+      }
+
+      .routine-card p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.35;
+      }
+
+      .routine-score {
+        display: grid;
+        place-items: center;
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: var(--green);
+        color: #fff;
+        font-weight: 1000;
+      }
+
+      .routine-score.score-present {
+        background: var(--amber);
+      }
+
+      .routine-score.score-weak {
+        background: var(--red);
       }
 
       .product-card {
@@ -388,6 +540,24 @@
 
       .score-weak {
         color: var(--red);
+      }
+
+      .routine-score.score-good,
+      .routine-score.score-present,
+      .routine-score.score-weak {
+        color: #fff;
+      }
+
+      .routine-score.score-good {
+        background: var(--green);
+      }
+
+      .routine-score.score-present {
+        background: var(--amber);
+      }
+
+      .routine-score.score-weak {
+        background: var(--red);
       }
 
       .product-body {
@@ -639,6 +809,7 @@
         .summary-grid,
         .filters,
         .product-grid,
+        .routine-board,
         .modal-grid {
           grid-template-columns: 1fr;
         }
@@ -647,8 +818,27 @@
           grid-template-columns: 1fr;
         }
 
+        .view-tabs {
+          width: 100%;
+        }
+
+        .view-tab {
+          min-width: 0;
+        }
+
         .row {
           grid-template-columns: 1fr;
+        }
+
+        .routine-card {
+          grid-template-columns: 72px minmax(0, 1fr);
+        }
+
+        .routine-score {
+          width: 52px;
+          height: 52px;
+          grid-column: 2;
+          justify-self: start;
         }
       }
     </style>
@@ -719,40 +909,49 @@
           <div class="profile-pill" id="profilePill">Oily · Acne, Dark Spots</div>
         </div>
 
-        <div class="summary-grid" id="summaryGrid"></div>
-        <div class="filters" id="filters">
-          <label>
-            Score Range
-            <select id="scoreFilter">
-              <option value="all">All score ranges</option>
-              <option value="90_100">90-100</option>
-              <option value="80_89">80-89</option>
-              <option value="70_79">70-79</option>
-              <option value="60_69">60-69</option>
-              <option value="50_59">50-59</option>
-              <option value="below50">Below 50</option>
-            </select>
-          </label>
-          <label>
-            Category
-            <select id="categoryFilter">
-              <option value="all">All categories</option>
-            </select>
-          </label>
-          <label>
-            Product Type
-            <select id="typeFilter">
-              <option value="all">All types</option>
-            </select>
-          </label>
-          <label>
-            Score Sheet
-            <select id="sheetFilter">
-              <option value="all">All sheets</option>
-            </select>
-          </label>
+        <div class="view-tabs" aria-label="Result view">
+          <button class="view-tab active" type="button" data-view="products">Products</button>
+          <button class="view-tab" type="button" data-view="routine">Routine</button>
         </div>
-        <div id="results"></div>
+
+        <div class="products-view" id="productsView">
+          <div class="summary-grid" id="summaryGrid"></div>
+          <div class="filters" id="filters">
+            <label>
+              Score Range
+              <select id="scoreFilter">
+                <option value="all">All score ranges</option>
+                <option value="90_100">90-100</option>
+                <option value="80_89">80-89</option>
+                <option value="70_79">70-79</option>
+                <option value="60_69">60-69</option>
+                <option value="50_59">50-59</option>
+                <option value="below50">Below 50</option>
+              </select>
+            </label>
+            <label>
+              Category
+              <select id="categoryFilter">
+                <option value="all">All categories</option>
+              </select>
+            </label>
+            <label>
+              Product Type
+              <select id="typeFilter">
+                <option value="all">All types</option>
+              </select>
+            </label>
+            <label>
+              Score Sheet
+              <select id="sheetFilter">
+                <option value="all">All sheets</option>
+              </select>
+            </label>
+          </div>
+          <div id="results"></div>
+        </div>
+
+        <div class="routine-view" id="routineView" hidden></div>
       </section>
     </main>
 
@@ -772,7 +971,9 @@
       };
 
       let currentProducts = [];
+      let currentRoutine = { am: [], pm: [], missing_slots: [] };
       let currentTotalMatches = 0;
+      let activeResultView = "products";
       let recommendTimer = null;
 
       const options = {
@@ -1022,6 +1223,79 @@
         });
       }
 
+      function renderRoutineColumn(title, description, items) {
+        return `
+          <section class="routine-column">
+            <h3>${escapeHtml(title)}</h3>
+            <p>${escapeHtml(description)}</p>
+            <div class="routine-list">
+              ${items.map(renderRoutineCard).join("")}
+            </div>
+          </section>
+        `;
+      }
+
+      function renderRoutineCard(item) {
+        const product = item.product;
+        if (!product) {
+          return `
+            <article class="routine-card routine-missing">
+              <div>
+                <span class="routine-step">${escapeHtml(item.label)}</span>
+                <h4>No ${escapeHtml(item.label.toLowerCase())} found</h4>
+                <p>No matching Excel-backed catalog product is available for this routine slot.</p>
+              </div>
+            </article>
+          `;
+        }
+
+        const band = scoreBand(product.score);
+        return `
+          <article class="routine-card" data-product-uid="${escapeHtml(product.product_uid)}">
+            <div class="routine-image">${productImage(product)}</div>
+            <div>
+              <span class="routine-step">${escapeHtml(item.label)}</span>
+              <h4>${escapeHtml(product.product_name)}</h4>
+              <p>${escapeHtml(product.brand_name)} · ${escapeHtml(product.product_type)} · ${escapeHtml(product.when_to_use || "Routine")}</p>
+            </div>
+            <div class="routine-score score-${band.className}">${escapeHtml(product.score)}</div>
+          </article>
+        `;
+      }
+
+      function renderRoutine(routine = currentRoutine) {
+        const amItems = routine?.am || [];
+        const pmItems = routine?.pm || [];
+        document.querySelector("#routineView").innerHTML = `
+          <div class="routine-board">
+            ${renderRoutineColumn("Day Routine", "Highest scored cleanser, serum, moisturiser, and sunscreen for this profile. Same-score ties can use any one product.", amItems)}
+            ${renderRoutineColumn("Night Routine", "Highest scored cleanser, serum, and moisturiser for this profile. Morning-only products are skipped when usage data says so.", pmItems)}
+          </div>
+        `;
+
+        document.querySelectorAll(".routine-card[data-product-uid]").forEach((card) => {
+          card.addEventListener("click", () => openProductModal(card.dataset.productUid));
+        });
+      }
+
+      function setResultView(view) {
+        activeResultView = view;
+        document.querySelector("#productsView").hidden = view !== "products";
+        document.querySelector("#routineView").hidden = view !== "routine";
+        document.querySelectorAll(".view-tab").forEach((tab) => {
+          tab.classList.toggle("active", tab.dataset.view === view);
+        });
+        updateResultSubtitle();
+      }
+
+      function updateResultSubtitle() {
+        if (activeResultView === "routine") {
+          document.querySelector("#resultSubtitle").textContent = "Routine picks use the highest scored product in each slot for this profile. If scores tie, any one tied product is acceptable.";
+          return;
+        }
+        document.querySelector("#resultSubtitle").textContent = `Showing ${currentProducts.length} of ${currentTotalMatches} matching catalog products from Excel-backed scores.`;
+      }
+
       function shortExplanation(explanation) {
         const text = String(explanation || "");
         return text.length > 118 ? `${text.slice(0, 118)}...` : text;
@@ -1035,16 +1309,19 @@
       async function recommend() {
         document.querySelector("#filters").style.display = "grid";
         document.querySelector("#results").innerHTML = `<div class="empty">Loading Roopsee-style product preview...</div>`;
+        document.querySelector("#routineView").innerHTML = `<div class="empty">Building day and night routine...</div>`;
         const response = await fetch("/api/recommend?limit=500", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload()),
         }).then((res) => res.json());
         currentProducts = response.products || [];
+        currentRoutine = response.routine || { am: [], pm: [], missing_slots: [] };
         currentTotalMatches = response.total_matches || currentProducts.length;
         populateFilters(currentProducts);
-        document.querySelector("#resultSubtitle").textContent = `Showing ${currentProducts.length} of ${currentTotalMatches} matching catalog products from Excel-backed scores.`;
         renderFilteredProducts();
+        renderRoutine(currentRoutine);
+        updateResultSubtitle();
       }
 
       function scheduleRecommend() {
@@ -1057,7 +1334,11 @@
       }
 
       function productByUid(uid) {
-        return currentProducts.find((product) => product.product_uid === uid);
+        const routineProducts = [...(currentRoutine.am || []), ...(currentRoutine.pm || [])]
+          .map((item) => item.product)
+          .filter(Boolean);
+        return currentProducts.find((product) => product.product_uid === uid)
+          || routineProducts.find((product) => product.product_uid === uid);
       }
 
       function openProductModal(uid) {
@@ -1117,6 +1398,11 @@
           state.activeTab = button.dataset.tab;
           document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab === button));
           render();
+        });
+      });
+      document.querySelectorAll(".view-tab").forEach((button) => {
+        button.addEventListener("click", () => {
+          setResultView(button.dataset.view);
         });
       });
       document.querySelector("#ageSelect").addEventListener("change", render);

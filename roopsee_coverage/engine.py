@@ -9,6 +9,71 @@ from .profile_rules import sanitize_profile
 from .scoring import score_row_for_profile, summarize_results, target_sheets, threshold_counts
 from .utils import norm_key
 
+ROUTINE_SLOTS = {
+    "am": [
+        {"key": "cleanser", "label": "Cleanser", "aliases": {"cleanser", "wash"}},
+        {"key": "serum", "label": "Serum", "aliases": {"serum"}},
+        {"key": "moisturiser", "label": "Moisturiser", "aliases": {"moisturiser", "moisturizer"}},
+        {"key": "sunscreen", "label": "Sunscreen", "aliases": {"sunscreen"}},
+    ],
+    "pm": [
+        {"key": "cleanser", "label": "Cleanser", "aliases": {"cleanser", "wash"}},
+        {"key": "serum", "label": "Serum", "aliases": {"serum"}},
+        {"key": "moisturiser", "label": "Moisturiser", "aliases": {"moisturiser", "moisturizer"}},
+    ],
+}
+
+
+def normalize_product_type(product_type: str) -> str:
+    return " ".join(str(product_type or "").strip().lower().split())
+
+
+def matches_routine_slot(product: dict[str, Any], slot: dict[str, Any]) -> bool:
+    product_type = normalize_product_type(product.get("product_type", ""))
+    return product_type in slot["aliases"]
+
+
+def is_allowed_for_routine_period(product: dict[str, Any], period: str) -> bool:
+    when_to_use = normalize_product_type(product.get("when_to_use", ""))
+    if not when_to_use:
+        return True
+    has_morning = "morning" in when_to_use or "am" in when_to_use
+    has_night = "night" in when_to_use or "pm" in when_to_use
+    if period == "am":
+        return not (has_night and not has_morning)
+    if period == "pm":
+        return not (has_morning and not has_night)
+    return True
+
+
+def select_routine_product(products: list[dict[str, Any]], period: str, slot: dict[str, Any]) -> dict[str, Any] | None:
+    for product in products:
+        if matches_routine_slot(product, slot) and is_allowed_for_routine_period(product, period):
+            return product
+    return None
+
+
+def build_routine(products: list[dict[str, Any]]) -> dict[str, Any]:
+    routine: dict[str, Any] = {
+        "am": [],
+        "pm": [],
+        "missing_slots": [],
+        "selection_basis": "highest_scored_product_per_routine_slot_from_current_profile_results",
+    }
+    for period, slots in ROUTINE_SLOTS.items():
+        for slot in slots:
+            product = select_routine_product(products, period, slot)
+            item = {
+                "period": period,
+                "slot": slot["key"],
+                "label": slot["label"],
+                "product": product,
+            }
+            routine[period].append(item)
+            if product is None:
+                routine["missing_slots"].append({"period": period, "slot": slot["key"], "label": slot["label"]})
+    return routine
+
 
 class RecommendationEngine:
     def __init__(self, score_workbook: Path, products_csv: Path):
@@ -48,11 +113,11 @@ class RecommendationEngine:
                 if existing is None or scored["score"] > existing["score"]:
                     best_by_uid[catalog["product_uid"]] = scored
 
-        results = sorted(
+        sorted_results = sorted(
             best_by_uid.values(),
             key=lambda item: (-item["score"], item["category"], item["product_name"].lower()),
         )
-        results = results[: max(1, min(limit, 1000))]
+        results = sorted_results[: max(1, min(limit, 1000))]
         return {
             "profile": scoring_profile,
             "input_profile": profile,
@@ -61,7 +126,20 @@ class RecommendationEngine:
             "total_matches": len(best_by_uid),
             "returned": len(results),
             "summary": summarize_results(results),
+            "routine": build_routine(sorted_results),
             "products": results,
+        }
+
+    def routine(self, profile: dict[str, Any], limit: int = 1000) -> dict[str, Any]:
+        response = self.recommend(profile, limit=limit)
+        return {
+            "profile": response["profile"],
+            "input_profile": response["input_profile"],
+            "profile_adjustments": response["profile_adjustments"],
+            "target_sheets": response["target_sheets"],
+            "total_matches": response["total_matches"],
+            "returned": response["returned"],
+            "routine": response["routine"],
         }
 
     def health(self) -> dict[str, Any]:

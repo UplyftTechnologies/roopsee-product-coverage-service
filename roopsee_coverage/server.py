@@ -156,6 +156,9 @@ def make_handler(engine: RecommendationEngine):
                 if parsed.path == "/api/recommend":
                     limit = int(query.get("limit", [str(body.get("limit", 500))])[0])
                     send_json(self, engine.recommend(body, limit=limit))
+                elif parsed.path == "/api/routine":
+                    limit = int(query.get("limit", [str(body.get("limit", 1000))])[0])
+                    send_json(self, engine.routine(body, limit=limit))
                 elif parsed.path == "/api/coverage":
                     mode = body.get("mode", "all_pnc")
                     profiles = body.get("profiles") or profiles_for_mode(mode, count=int(body.get("count", 72)))

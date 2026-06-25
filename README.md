@@ -58,7 +58,17 @@ Input shape:
 }
 ```
 
-Returns sorted products with doctor-sheet score, label, explanation, price, image, source score sheet, and component scores.
+Returns sorted products with doctor-sheet score, label, explanation, price, image, source score sheet, component scores, and a routine object.
+
+The routine object chooses the highest scored product for each slot in the current profile:
+
+- Day: cleanser, serum, moisturiser, sunscreen.
+- Night: cleanser, serum, moisturiser.
+- If multiple products have the same score for a slot, any one tied product can be used.
+
+### `POST /api/routine`
+
+Accepts the same profile input as `/api/recommend` and returns only the day/night routine without the full product list.
 
 ### `GET /api/coverage?mode=all_pnc&top_n=3`
 
