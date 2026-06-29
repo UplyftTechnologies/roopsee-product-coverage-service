@@ -101,6 +101,8 @@ def normalized_product_type(value: str) -> str:
 
 def scoring_rule_for_product_type(product_type: str) -> dict[str, bool]:
     normalized = normalized_product_type(product_type)
+    if normalized == "serum":
+        return {"age": True, "concern": True, "skin": False, "special": True}
     if normalized in {"moisturizer", "sunscreen"}:
         return {"age": True, "concern": False, "skin": True, "special": True}
     return {"age": True, "concern": True, "skin": True, "special": True}
@@ -127,12 +129,7 @@ def serum_is_night_only_for_profile(product_type: str, profile: dict[str, Any]) 
         return False
     special_conditions = [norm_label(item) for item in profile.get("selectedSpecialConditions", [])]
     has_pregnancy_or_breastfeeding = any(item in {"pregnant", "breastfeeding"} for item in special_conditions)
-    return (
-        has_pregnancy_or_breastfeeding
-        or is_under_16_profile(profile)
-        or is_dry_or_sensitive_profile(profile)
-        or has_active_special_condition(profile)
-    )
+    return has_pregnancy_or_breastfeeding or is_under_16_profile(profile) or is_dry_or_sensitive_profile(profile)
 
 
 def recommended_when_to_use(row: ScoreRow, catalog: dict[str, Any], profile: dict[str, Any]) -> str:
@@ -160,10 +157,19 @@ def routine_notes(row: ScoreRow, catalog: dict[str, Any], profile: dict[str, Any
     return notes
 
 
-def map_special_columns(row: ScoreRow, special_conditions: list[str]) -> list[tuple[str, str, float]]:
+def serum_special_conditions_for_scoring(special_conditions: list[str]) -> tuple[list[str], bool]:
+    filtered = [item for item in special_conditions if norm_label(item) != "excessive dryness"]
+    skipped_excessive_dryness = len(filtered) != len(special_conditions)
+    should_use_default_none = not skipped_excessive_dryness or bool([norm_label(item) for item in filtered])
+    return filtered, should_use_default_none
+
+
+def map_special_columns(
+    row: ScoreRow, special_conditions: list[str], use_default_none: bool = True
+) -> list[tuple[str, str, float]]:
     conditions = [norm_label(item) for item in special_conditions if norm_label(item)]
     if not conditions or conditions == ["none"] or ("none" in conditions and len(conditions) == 1):
-        return [("None", "None", 100)]
+        return [("None", "None", 100)] if use_default_none else []
 
     mapped: list[tuple[str, str, float]] = []
     if "pregnant" in conditions:
@@ -259,7 +265,11 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
             components.append({"name": skin_header, "score": sheet_score(skin_score), "source_column": skin_header})
             reasons.append(f"{skin_header}: {skin_score:g}")
 
-    special_pairs = map_special_columns(row, profile.get("selectedSpecialConditions", [])) if rule["special"] else []
+    special_conditions = profile.get("selectedSpecialConditions", [])
+    use_default_none = True
+    if normalized_product_type(product_type) == "serum":
+        special_conditions, use_default_none = serum_special_conditions_for_scoring(special_conditions)
+    special_pairs = map_special_columns(row, special_conditions, use_default_none) if rule["special"] else []
     for label, source_column, value in special_pairs:
         components.append({"name": label, "score": sheet_score(value), "source_column": source_column})
         reasons.append(f"{label}: {value:g}")

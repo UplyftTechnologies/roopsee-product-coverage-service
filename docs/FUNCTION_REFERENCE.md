@@ -513,7 +513,21 @@ Why it exists:
 
 - The tool should show one score per product/profile while still exposing all source component scores in product details.
 
-### `map_special_columns(row, special_conditions)`
+### `serum_special_conditions_for_scoring(special_conditions)`
+
+Filters the selected special conditions before scoring a serum.
+
+What it does:
+
+- Removes `Excessive Dryness` from serum scoring.
+- Keeps `Pregnant`, `Breastfeeding`, and `None`.
+- Avoids adding a fake `None = 100` component when the only selected special condition was `Excessive Dryness`.
+
+Why it exists:
+
+- The doctor rule for serums skips skin-type scores and also skips the Excessive Dryness special-condition score.
+
+### `map_special_columns(row, special_conditions, use_default_none=True)`
 
 Maps selected special conditions to score columns on a product row.
 
@@ -589,8 +603,8 @@ What it does:
 1. Applies the product-type scoring rule.
 2. Adds age score if the selected age maps to a sheet column and the product type uses age.
 3. Adds concern score components only for product types that use concerns.
-4. Adds skin-type score for face/body rows when the product type uses skin type.
-5. Adds special-condition scores, with `None` as `100` and Excessive Dryness bucketed as `-100/0/100`.
+4. Adds skin-type score for face/body rows when the product type uses skin type; serums skip this.
+5. Adds special-condition scores, with `None` as `100` and Excessive Dryness bucketed as `-100/0/100`; serums skip Excessive Dryness.
 6. Adds warnings for negative safety scores.
 7. Uses the rounded average of component scores as the final score unless a component is `-100`, which becomes a hard blocker.
 8. Builds a product response object using live catalog data first, then score-sheet fallbacks.
