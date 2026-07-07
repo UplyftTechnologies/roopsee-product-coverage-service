@@ -331,7 +331,7 @@
 
       .routine-board {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
       }
 
@@ -361,6 +361,15 @@
       .routine-list {
         display: grid;
         gap: 10px;
+      }
+
+      .routine-section-title {
+        margin: 16px 0 8px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
 
       .routine-card {
@@ -795,6 +804,10 @@
         .product-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .routine-board {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
 
       @media (max-width: 760px) {
@@ -859,11 +872,7 @@
         <div class="section-title">Skin Type *</div>
         <div class="chips" id="skinTypeChips"></div>
 
-        <div class="section-title">Skin Concerns (Max 2) *</div>
-        <div class="tabs">
-          <button class="tab active" data-tab="face">Face & Body</button>
-          <button class="tab" data-tab="lips">Lips & Eyes</button>
-        </div>
+        <div class="section-title">Skin Concern (Choose 1) *</div>
         <div class="chips" id="faceConcernChips"></div>
         <div class="chips" id="lipsConcernChips" style="display: none"></div>
 
@@ -964,22 +973,37 @@
     <script>
       const state = {
         selectedSkinType: "Oily",
-        selectedFaceBodyConcerns: ["Acne", "Dark Spots"],
+        selectedFaceBodyConcerns: ["Acne"],
         selectedLipsEyesConcerns: [],
         selectedSpecialConditions: ["None"],
         activeTab: "face",
       };
 
       let currentProducts = [];
-      let currentRoutine = { am: [], pm: [], missing_slots: [] };
+      let currentRoutine = { tiers: {}, missing_slots: [] };
       let currentTotalMatches = 0;
       let activeResultView = "products";
       let recommendTimer = null;
 
       const options = {
         skinTypes: ["Oily", "Dry", "Normal", "Combination"],
-        faceBodyConcerns: ["Acne", "Pigmentation", "Dryness", "Dark Spots", "Aging", "Sensitivity", "Large Pores", "Dullness"],
-        lipsEyesConcerns: ["Dark circles", "Puffiness", "Dry Under Eye", "Sensitive Eye", "Chapped Lips", "Lip Pigment", "Dull Lips", "Dehydrated Lips"],
+        faceBodyConcerns: [
+          "Acne",
+          "Body Acne",
+          "Dryness",
+          "Open Pores",
+          "Uneven Skin Tone",
+          "Dark Spots/Pigmentation",
+          "Melasma",
+          "Barrier Repair",
+          "Comedones",
+          "Wrinkles/Fine lines",
+          "Redness/Irritation",
+          "Dehydration",
+          "Dullness",
+          "Tanning",
+        ],
+        lipsEyesConcerns: [],
         specialConditions: ["Excessive Dryness", "Pregnant", "Breastfeeding", "None"],
       };
 
@@ -1044,13 +1068,17 @@
         return [...list, item].slice(-2);
       }
 
+      function chooseSingle(item) {
+        return [item];
+      }
+
       function render() {
         sanitizeSpecialState();
         renderChips("#skinTypeChips", options.skinTypes, (item) => state.selectedSkinType === item, (item) => {
           state.selectedSkinType = item;
         });
         renderChips("#faceConcernChips", options.faceBodyConcerns, (item) => state.selectedFaceBodyConcerns.includes(item), (item) => {
-          state.selectedFaceBodyConcerns = toggleMaxTwo(state.selectedFaceBodyConcerns, item);
+          state.selectedFaceBodyConcerns = chooseSingle(item);
         });
         renderChips("#lipsConcernChips", options.lipsEyesConcerns, (item) => state.selectedLipsEyesConcerns.includes(item), (item) => {
           state.selectedLipsEyesConcerns = toggleMaxTwo(state.selectedLipsEyesConcerns, item);
@@ -1223,14 +1251,34 @@
         });
       }
 
-      function renderRoutineColumn(title, description, items) {
+      function renderRoutineSection(title, items) {
         return `
-          <section class="routine-column">
-            <h3>${escapeHtml(title)}</h3>
-            <p>${escapeHtml(description)}</p>
+          <div>
+            <div class="routine-section-title">${escapeHtml(title)}</div>
             <div class="routine-list">
               ${items.map(renderRoutineCard).join("")}
             </div>
+          </div>
+        `;
+      }
+
+      function renderRoutineTier(tier) {
+        return `
+          <section class="routine-column">
+            <h3>${escapeHtml(tier.label)}</h3>
+            <p>${escapeHtml(tier.description)}</p>
+            ${renderRoutineSection("AM Routine", tier.am || [])}
+            ${renderRoutineSection("PM Routine", tier.pm || [])}
+          </section>
+        `;
+      }
+
+      function renderWeeklyRoutine(items) {
+        return `
+          <section class="routine-column">
+            <h3>Weekly Routine</h3>
+            <p>Best sheet mask and clay mask for this profile, selected by score from the Excel catalog.</p>
+            ${renderRoutineSection("Once or Twice Weekly", items || [])}
           </section>
         `;
       }
@@ -1264,12 +1312,14 @@
       }
 
       function renderRoutine(routine = currentRoutine) {
-        const amItems = routine?.am || [];
-        const pmItems = routine?.pm || [];
+        const tiers = routine?.tiers || {};
+        const tierList = ["premium", "value_fit"]
+          .map((key) => tiers[key])
+          .filter(Boolean);
         document.querySelector("#routineView").innerHTML = `
           <div class="routine-board">
-            ${renderRoutineColumn("Day Routine", "Highest scored cleanser, serum, moisturiser, and sunscreen for this profile. Same-score ties can use any one product.", amItems)}
-            ${renderRoutineColumn("Night Routine", "Highest scored cleanser, serum, and moisturiser for this profile. Morning-only products are skipped when usage data says so.", pmItems)}
+            ${tierList.map(renderRoutineTier).join("")}
+            ${renderWeeklyRoutine(routine?.weekly || [])}
           </div>
         `;
 
@@ -1290,7 +1340,7 @@
 
       function updateResultSubtitle() {
         if (activeResultView === "routine") {
-          document.querySelector("#resultSubtitle").textContent = "Routine picks use the highest scored product in each slot for this profile. If scores tie, any one tied product is acceptable.";
+          document.querySelector("#resultSubtitle").textContent = "Routine picks are split into Premium and Value Fit, using score plus effective price from the Excel catalog.";
           return;
         }
         document.querySelector("#resultSubtitle").textContent = `Showing ${currentProducts.length} of ${currentTotalMatches} matching catalog products from Excel-backed scores. Any -100 component stays a hard blocker.`;
@@ -1316,7 +1366,7 @@
           body: JSON.stringify(payload()),
         }).then((res) => res.json());
         currentProducts = response.products || [];
-        currentRoutine = response.routine || { am: [], pm: [], missing_slots: [] };
+        currentRoutine = response.routine || { tiers: {}, missing_slots: [] };
         currentTotalMatches = response.total_matches || currentProducts.length;
         populateFilters(currentProducts);
         renderFilteredProducts();
@@ -1334,7 +1384,12 @@
       }
 
       function productByUid(uid) {
-        const routineProducts = [...(currentRoutine.am || []), ...(currentRoutine.pm || [])]
+        const tierItems = Object.values(currentRoutine.tiers || {}).flatMap((tier) => [
+          ...(tier.am || []),
+          ...(tier.pm || []),
+        ]);
+        const legacyItems = [...(currentRoutine.am || []), ...(currentRoutine.pm || []), ...(currentRoutine.weekly || [])];
+        const routineProducts = [...tierItems, ...legacyItems]
           .map((item) => item.product)
           .filter(Boolean);
         return currentProducts.find((product) => product.product_uid === uid)

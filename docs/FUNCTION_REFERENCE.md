@@ -302,7 +302,7 @@ What it does:
 
 Why it exists:
 
-- The quiz allows one or two concerns from a group.
+- Coverage utilities use it to build allowed concern/special-condition sets.
 
 Example:
 
@@ -317,9 +317,8 @@ Builds every valid concern selection group.
 
 What it does:
 
-- Builds `8C1 + 8C2 = 36` Face & Body combinations.
-- Builds `8C1 + 8C2 = 36` Lips & Eyes combinations.
-- Returns `72` total concern states.
+- Builds the `14C1` single-concern Face & Body combinations from the July workbook.
+- Returns `14` total concern states.
 
 Why it exists:
 
@@ -367,7 +366,7 @@ What it does:
 Formula:
 
 ```text
-4 skin types * 72 concern states * 9 special states * 4 age states = 10,368 profiles
+4 skin types * 14 concern states * 9 special states * 4 age states = 2,016 profiles
 ```
 
 Why it exists:
@@ -382,7 +381,7 @@ What it does:
 
 - Uses `Not selected` age.
 - Uses no special conditions.
-- Returns `4 * 72 = 288` profiles.
+- Returns `4 * 14 = 56` profiles.
 
 Why it exists:
 
@@ -396,7 +395,7 @@ What it does:
 
 - Uses `Not selected` age.
 - Includes all `9` special-condition states.
-- Returns `4 * 72 * 9 = 2,592` profiles.
+- Returns `4 * 14 * 9 = 504` profiles.
 
 Why it exists:
 
@@ -409,8 +408,7 @@ Creates a smaller smoke-test list of realistic profiles.
 What it does:
 
 - Cycles through skin types and ages.
-- Uses curated face/body concern sets.
-- Uses curated lips/eyes concern sets.
+- Uses the 14 July-workbook single-concern choices.
 - Alternates gender safely.
 - Stops when `limit` profiles have been created.
 
@@ -1165,7 +1163,15 @@ What it does:
 
 Why it exists:
 
-- The quiz allows max two concerns.
+- Special conditions still allow multiple selections.
+
+### `chooseSingle(item)`
+
+Returns a one-item concern list.
+
+Why it exists:
+
+- The July workbook flow allows the tester to choose exactly one of the 14 concern columns.
 
 ### `render()`
 
@@ -1175,8 +1181,7 @@ What it does:
 
 - Sanitizes special conditions.
 - Renders skin type chips.
-- Renders face/body concern chips.
-- Renders lips/eyes concern chips.
+- Renders the 14 single-select concern chips.
 - Renders special-condition chips.
 - Shows active concern tab.
 - Updates testing payload preview.

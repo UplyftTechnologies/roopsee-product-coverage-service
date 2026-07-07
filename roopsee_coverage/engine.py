@@ -6,21 +6,42 @@ from typing import Any
 from .constants import THRESHOLDS
 from .loaders import load_score_rows, parse_catalog
 from .profile_rules import sanitize_profile
-from .scoring import score_row_for_profile, summarize_results, target_sheets, threshold_counts
+from .scoring import normalized_product_type, score_row_for_profile, summarize_results, target_sheets, threshold_counts
 from .utils import norm_key
 
 ROUTINE_SLOTS = {
     "am": [
         {"key": "cleanser", "label": "Cleanser", "aliases": {"cleanser", "wash"}},
-        {"key": "serum", "label": "Serum", "aliases": {"serum"}},
         {"key": "moisturiser", "label": "Moisturiser", "aliases": {"moisturiser", "moisturizer"}},
         {"key": "sunscreen", "label": "Sunscreen", "aliases": {"sunscreen"}},
     ],
     "pm": [
-        {"key": "cleanser", "label": "Cleanser", "aliases": {"cleanser", "wash"}},
         {"key": "serum", "label": "Serum", "aliases": {"serum"}},
         {"key": "moisturiser", "label": "Moisturiser", "aliases": {"moisturiser", "moisturizer"}},
+        {"key": "cleanser", "label": "Cleanser", "aliases": {"cleanser", "wash"}},
     ],
+}
+
+WEEKLY_ROUTINE_SLOTS = [
+    {"key": "sheet_mask", "label": "Sheet Mask", "aliases": {"sheet mask"}},
+    {"key": "clay_mask", "label": "Clay Mask", "aliases": {"clay mask"}},
+]
+
+ROUTINE_TIERS = {
+    "premium": {
+        "label": "Premium",
+        "description": "Score 90+ and effective price above Rs. 1000.",
+        "min_score": 90,
+        "min_price": 1000,
+        "max_price": None,
+    },
+    "value_fit": {
+        "label": "Value Fit",
+        "description": "Best score with effective price below Rs. 1000.",
+        "min_score": None,
+        "min_price": None,
+        "max_price": 1000,
+    },
 }
 
 
@@ -28,50 +49,135 @@ def normalize_product_type(product_type: str) -> str:
     return " ".join(str(product_type or "").strip().lower().split())
 
 
+def product_search_text(product: dict[str, Any]) -> str:
+    return " ".join(
+        str(product.get(field, ""))
+        for field in [
+            "product_name",
+            "product_type",
+            "hero_ingredient",
+            "single_hero_ingredient",
+            "secondary_hero_ingredients",
+            "ingredients",
+        ]
+    ).lower()
+
+
+def price_amount(value: Any) -> float | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    cleaned = "".join(char for char in text if char.isdigit() or char == ".")
+    if not cleaned:
+        return None
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def effective_price(product: dict[str, Any]) -> float | None:
+    return price_amount(product.get("selling_price")) or price_amount(product.get("mrp"))
+
+
 def matches_routine_slot(product: dict[str, Any], slot: dict[str, Any]) -> bool:
     product_type = normalize_product_type(product.get("product_type", ""))
+    normalized = normalized_product_type(product_type)
+    text = product_search_text(product)
+    key = slot["key"]
+    if key == "cleanser":
+        return normalized == "cleanser"
+    if key == "serum":
+        return normalized == "serum"
+    if key == "moisturiser":
+        return normalized == "moisturizer" or product_type in {"body lotion", "body cream"}
+    if key == "sunscreen":
+        return normalized == "sunscreen" or "sunscreen" in text or "spf" in text
+    if key == "sheet_mask":
+        return product_type == "sheet mask" or "sheet mask" in text
+    if key == "clay_mask":
+        return product_type == "mask" and any(token in text for token in ["clay", "kaolin", "bentonite", "volcanic"])
     return product_type in slot["aliases"]
 
 
-def is_allowed_for_routine_period(product: dict[str, Any], period: str) -> bool:
-    when_to_use = normalize_product_type(product.get("when_to_use", ""))
-    if not when_to_use:
-        return True
-    has_morning = "morning" in when_to_use or "am" in when_to_use
-    has_night = "night" in when_to_use or "pm" in when_to_use
-    if period == "am":
-        return not (has_night and not has_morning)
-    if period == "pm":
-        return not (has_morning and not has_night)
+def matches_routine_tier(product: dict[str, Any], tier: dict[str, Any]) -> bool:
+    price = effective_price(product)
+    if price is None:
+        return False
+    min_score = tier.get("min_score")
+    min_price = tier.get("min_price")
+    max_price = tier.get("max_price")
+    if min_score is not None and product["score"] < min_score:
+        return False
+    if min_price is not None and price <= min_price:
+        return False
+    if max_price is not None and price >= max_price:
+        return False
     return True
 
 
-def select_routine_product(products: list[dict[str, Any]], period: str, slot: dict[str, Any]) -> dict[str, Any] | None:
+def select_routine_product(products: list[dict[str, Any]], slot: dict[str, Any], tier: dict[str, Any]) -> dict[str, Any] | None:
     for product in products:
-        if matches_routine_slot(product, slot) and is_allowed_for_routine_period(product, period):
+        if matches_routine_slot(product, slot) and matches_routine_tier(product, tier):
+            return product
+    return None
+
+
+def select_best_slot_product(products: list[dict[str, Any]], slot: dict[str, Any]) -> dict[str, Any] | None:
+    for product in products:
+        if matches_routine_slot(product, slot):
             return product
     return None
 
 
 def build_routine(products: list[dict[str, Any]]) -> dict[str, Any]:
     routine: dict[str, Any] = {
-        "am": [],
-        "pm": [],
+        "tiers": {},
         "missing_slots": [],
-        "selection_basis": "highest_scored_product_per_routine_slot_from_current_profile_results",
+        "selection_basis": "highest_scored_product_per_routine_slot_from_current_profile_results_with_price_tiers",
     }
-    for period, slots in ROUTINE_SLOTS.items():
-        for slot in slots:
-            product = select_routine_product(products, period, slot)
-            item = {
-                "period": period,
-                "slot": slot["key"],
-                "label": slot["label"],
-                "product": product,
-            }
-            routine[period].append(item)
-            if product is None:
-                routine["missing_slots"].append({"period": period, "slot": slot["key"], "label": slot["label"]})
+    for tier_key, tier in ROUTINE_TIERS.items():
+        tier_payload: dict[str, Any] = {
+            "label": tier["label"],
+            "description": tier["description"],
+            "am": [],
+            "pm": [],
+        }
+        for period, slots in ROUTINE_SLOTS.items():
+            for slot in slots:
+                product = select_routine_product(products, slot, tier)
+                item = {
+                    "tier": tier_key,
+                    "period": period,
+                    "slot": slot["key"],
+                    "label": slot["label"],
+                    "product": product,
+                }
+                tier_payload[period].append(item)
+                if product is None:
+                    routine["missing_slots"].append({
+                        "tier": tier_key,
+                        "period": period,
+                        "slot": slot["key"],
+                        "label": slot["label"],
+                    })
+        routine["tiers"][tier_key] = tier_payload
+
+    routine["weekly"] = []
+    for slot in WEEKLY_ROUTINE_SLOTS:
+        product = select_best_slot_product(products, slot)
+        item = {
+            "period": "weekly",
+            "slot": slot["key"],
+            "label": slot["label"],
+            "product": product,
+        }
+        routine["weekly"].append(item)
+        if product is None:
+            routine["missing_slots"].append({"period": "weekly", "slot": slot["key"], "label": slot["label"]})
+
+    routine["am"] = routine["tiers"].get("premium", {}).get("am", [])
+    routine["pm"] = routine["tiers"].get("premium", {}).get("pm", [])
     return routine
 
 

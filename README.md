@@ -6,7 +6,7 @@ Small workbook/CSV-backed tester for checking whether the live catalog has enoug
 
 - `Product details and score logic.xlsx`: final doctor-backed score sheets.
 - `products.csv`: normalized live catalog available to show on the site.
-- `New products list 25062026.xlsx`: uploaded source workbook used to generate the current 390-product catalog.
+- `New products list 07072026.xlsx`: uploaded source workbook used to generate the current 384-product catalog from the `All products` sheet.
 - Product UID matching is normalized, so `Roopsee/F/SU/13` and `Roopsee-F-SU-13` join correctly.
 
 Only products present in `products.csv` are returned to the frontend.
@@ -52,7 +52,7 @@ Input shape:
   "age": "Under 16",
   "selectedGender": "male",
   "selectedSkinType": "Oily",
-  "selectedFaceBodyConcerns": ["Acne", "Dark Spots"],
+  "selectedFaceBodyConcerns": ["Acne"],
   "selectedLipsEyesConcerns": [],
   "selectedSpecialConditions": ["Excessive Dryness"]
 }
@@ -62,22 +62,25 @@ Returns sorted products with doctor-sheet score, label, explanation, price, imag
 
 The routine object chooses the highest scored product for each slot in the current profile:
 
-- Day: cleanser, serum, moisturiser, sunscreen.
-- Night: cleanser, serum, moisturiser.
+- Premium AM/PM: score `90+` and effective price above `1000`.
+- Value Fit AM/PM: best score with effective price below `1000`.
+- AM slots: cleanser, moisturiser, sunscreen.
+- PM slots: serum, moisturiser, cleanser.
+- Weekly: best sheet mask and best clay mask by score, independent of price tier.
 - If multiple products have the same score for a slot, any one tied product can be used.
-- Serums become night-only for under-16, dry/sensitive, pregnancy, breastfeeding, or any active special-condition profile.
+- Serums become night-only for under-16, dry/sensitive, pregnancy, or breastfeeding profiles.
 
 ### `POST /api/routine`
 
-Accepts the same profile input as `/api/recommend` and returns only the day/night routine without the full product list.
+Accepts the same profile input as `/api/recommend` and returns only the tiered AM/PM/weekly routine without the full product list.
 
 ### `GET /api/coverage?mode=all_pnc&top_n=3`
 
 Runs the coverage audit for one of the supported modes:
 
-- `all_pnc`: `10,368` rows using the final PnC formula.
-- `skin_concern_type`: `288` rows for skin type plus concern group/set.
-- `with_special_conditions`: `2,592` rows for skin type plus concern group/set plus special-condition state.
+- `all_pnc`: `2,016` rows using the final one-concern PnC formula.
+- `skin_concern_type`: `56` rows for skin type plus one concern.
+- `with_special_conditions`: `504` rows for skin type plus one concern plus special-condition state.
 - `representative`: `72` rows for quick smoke testing only.
 
 Use `row_limit=50` to calculate full summary counts but return only the weakest rows needed for the app preview.
@@ -90,7 +93,7 @@ Shows workbook/catalog counts and score coverage gaps.
 
 The included frontend is served from `/` and lets you:
 
-- choose skin type, concerns, special conditions, age, and gender,
+- choose skin type, one of the 14 July-workbook concerns, special conditions, age, and gender,
 - submit the same JSON shape the app can send,
 - view product cards sorted by score,
 - filter returned products by score band, category, product type, and score sheet,
@@ -146,11 +149,11 @@ The export follows this PnC formula:
 
 ```text
 4C1 skin profile
-× (2 × (8C1 + 8C2)) concern combinations
+× 14C1 concern combinations
 × (3C0 + 3C1 + 3C2 + 3C3 + explicit None) special-condition states
 × 4 age states
-= 4 × 72 × 9 × 4
-= 10,368 rows
+= 4 × 14 × 9 × 4
+= 2,016 rows
 ```
 
 The workbook also includes smaller subsheets for `Skin Concern Type` and `With Special Conditions`.

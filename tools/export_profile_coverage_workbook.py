@@ -231,14 +231,14 @@ def write_assumptions(wb: Workbook, assumptions: dict[str, Any]) -> None:
         ("Gender", "Removed from final combination grid."),
         ("PnC formula", assumptions["formula"]),
         ("Skin profile", "4C1 = 4"),
-        ("Concern formula", "2 * (8C1 + 8C2) = 2 * (8 + 28) = 72"),
+        ("Concern formula", "14C1 = 14"),
         ("Special-condition formula", "3C0 + 3C1 + 3C2 + 3C3 + explicit None = 1 + 3 + 3 + 1 + 1 = 9"),
         ("Age factor", "4 states: Under 16, 17-25, Above 25, Not selected"),
         ("Age", "Under 16, 17-25, Above 25, and Not selected."),
         ("Not selected age handling", "Age score is skipped; it is not treated as Above 25."),
-        ("Concern rule", "Face & Body or Lips & Eyes, choosing 1 or 2 concerns from that group."),
+        ("Concern rule", "Choose exactly 1 of the 14 July-workbook concern columns."),
         ("Face & Body concern combinations", assumptions["face_concern_combinations"]),
-        ("Lips & Eyes concern combinations", assumptions["lips_eye_concern_combinations"]),
+        ("Lips & Eyes concern combinations", "0 (inactive in July one-concern flow)"),
         ("Special condition rule", "3C0 and explicit None are both listed as requested; both score as no special-condition constraint."),
         ("Special-condition combinations", assumptions["special_combinations"]),
         ("All PnC Combinations sheet", "Skin type + concern group/set + special state + age."),
@@ -299,7 +299,7 @@ def export_workbook(score_workbook: Path, products_csv: Path, output_path: Path)
     lips_eye_count = len([item for item in concern_combinations() if item["concern_group"] == "Lips & Eyes"])
     health = engine.health()
     assumptions = {
-        "formula": "4C1 * (2 * (8C1 + 8C2)) * (3C0 + 3C1 + 3C2 + 3C3 + None) * 4 = 10,368",
+        "formula": "4C1 * 14C1 * (3C0 + 3C1 + 3C2 + 3C3 + None) * 4 = 2,016",
         "skin_types": 4,
         "age_states": 4,
         "face_concern_combinations": face_count,

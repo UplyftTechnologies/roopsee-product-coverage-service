@@ -20,14 +20,10 @@ def _choice_sets(items: list[str], min_size: int = 1, max_size: int | None = Non
 
 
 def concern_combinations() -> list[dict[str, list[str] | str]]:
-    face_sets = _choice_sets(QUIZ_OPTIONS["faceBodyConcerns"], max_size=2)
-    lips_eye_sets = _choice_sets(QUIZ_OPTIONS["lipsEyesConcerns"], max_size=2)
+    face_sets = _choice_sets(QUIZ_OPTIONS["faceBodyConcerns"], max_size=1)
     return [
         {"concern_group": "Face & Body", "face_body_concerns": concerns, "lips_eyes_concerns": []}
         for concerns in face_sets
-    ] + [
-        {"concern_group": "Lips & Eyes", "face_body_concerns": [], "lips_eyes_concerns": concerns}
-        for concerns in lips_eye_sets
     ]
 
 
@@ -106,36 +102,7 @@ def skin_concern_special_combinations() -> list[dict[str, Any]]:
 def representative_profiles(limit: int = 72) -> list[dict[str, Any]]:
     skin_types = QUIZ_OPTIONS["skinTypes"]
     ages = QUIZ_OPTIONS["ages"]
-    face_pairs = [
-        ["Acne"],
-        ["Dark Spots"],
-        ["Dryness"],
-        ["Pigmentation"],
-        ["Aging"],
-        ["Sensitivity"],
-        ["Large Pores"],
-        ["Dullness"],
-        ["Acne", "Dark Spots"],
-        ["Acne", "Large Pores"],
-        ["Dryness", "Sensitivity"],
-        ["Pigmentation", "Dullness"],
-        ["Aging", "Dryness"],
-        ["Dark Spots", "Dullness"],
-    ]
-    lips_eye_pairs = [
-        ["Dark circles"],
-        ["Puffiness"],
-        ["Dry Under Eye"],
-        ["Sensitive Eye"],
-        ["Chapped Lips"],
-        ["Lip Pigment"],
-        ["Dull Lips"],
-        ["Dehydrated Lips"],
-        ["Dark circles", "Puffiness"],
-        ["Chapped Lips", "Lip Pigment"],
-        ["Dry Under Eye", "Sensitive Eye"],
-        ["Dull Lips", "Dehydrated Lips"],
-    ]
+    face_pairs = [[concern] for concern in QUIZ_OPTIONS["faceBodyConcerns"]]
     profiles: list[dict[str, Any]] = []
     for skin_index, skin_type in enumerate(skin_types):
         for concern_index, concerns in enumerate(face_pairs):
@@ -147,21 +114,6 @@ def representative_profiles(limit: int = 72) -> list[dict[str, Any]]:
                 "selectedSkinType": skin_type,
                 "selectedFaceBodyConcerns": concerns,
                 "selectedLipsEyesConcerns": [],
-                "selectedSpecialConditions": specials[(skin_index + concern_index) % len(specials)],
-            })
-            if len(profiles) >= limit:
-                return profiles
-
-    for skin_index, skin_type in enumerate(skin_types):
-        for concern_index, concerns in enumerate(lips_eye_pairs):
-            gender = "male" if skin_index % 2 == 0 else "female"
-            specials = special_sets_for_gender(gender)
-            profiles.append({
-                "age": ages[(skin_index + concern_index) % len(ages)],
-                "selectedGender": gender,
-                "selectedSkinType": skin_type,
-                "selectedFaceBodyConcerns": [],
-                "selectedLipsEyesConcerns": concerns,
                 "selectedSpecialConditions": specials[(skin_index + concern_index) % len(specials)],
             })
             if len(profiles) >= limit:

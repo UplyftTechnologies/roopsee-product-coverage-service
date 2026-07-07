@@ -38,6 +38,14 @@ def first_image(raw: str) -> str:
             return clean_text(parsed[0])
     except json.JSONDecodeError:
         pass
+    first_url_start = raw.find("http")
+    if first_url_start >= 0:
+        next_url_start = raw.find("http", first_url_start + 4)
+        if next_url_start >= 0:
+            return clean_text(raw[first_url_start:next_url_start]).rstrip(",")
+    urls = re.findall(r"https?://\S+", raw)
+    if urls:
+        return clean_text(urls[0]).rstrip(",")
     if "," in raw:
-        return clean_text(raw.split(",", 1)[0])
-    return raw
+        return clean_text(raw.split(",", 1)[0]).rstrip(",")
+    return raw.rstrip(",")

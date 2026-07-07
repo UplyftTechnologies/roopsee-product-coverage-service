@@ -9,8 +9,9 @@ from openpyxl import load_workbook
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
-SOURCE_WORKBOOK = BASE_DIR / "data" / "New products list 25062026.xlsx"
+SOURCE_WORKBOOK = BASE_DIR / "data" / "New products list 07072026.xlsx"
 OUTPUT_CSV = BASE_DIR / "data" / "products.csv"
+SOURCE_SHEET = "All products"
 
 OUTPUT_COLUMNS = [
     "product_uid",
@@ -124,7 +125,9 @@ FIELD_MAP = {
     "Donts": "donts",
     "Storage Instructions": "storage_instructions",
     "Usage Instructions": "usage_instructions",
+    "Ingredient caution": "ingredient_cautions",
     "Images": "images",
+    "Images ": "images",
 }
 
 
@@ -155,6 +158,10 @@ def canonical_product_type(value: Any) -> str:
     if normalized == "moisturiser":
         return "Moisturizer"
     return raw
+
+
+def is_usable_product_row(raw: dict[str, Any]) -> bool:
+    return bool(clean_text(raw.get("Product UID")) and clean_text(raw.get("Product Name")))
 
 
 def has_any(text: str, needles: list[str]) -> bool:
@@ -205,7 +212,7 @@ def infer_when_to_use(row: dict[str, str]) -> str:
 
 def import_products() -> tuple[int, int, int]:
     workbook = load_workbook(SOURCE_WORKBOOK, data_only=True)
-    worksheet = workbook["Sheet2"]
+    worksheet = workbook[SOURCE_SHEET]
     headers = [worksheet.cell(1, column).value for column in range(1, worksheet.max_column + 1)]
 
     raw_rows: list[dict[str, Any]] = []
@@ -215,7 +222,7 @@ def import_products() -> tuple[int, int, int]:
             for column in range(1, worksheet.max_column + 1)
             if headers[column - 1] is not None
         }
-        if not any(value not in (None, "") for value in raw.values()):
+        if not any(value not in (None, "") for value in raw.values()) or not is_usable_product_row(raw):
             continue
         raw["_source_excel_row"] = row_number
         raw_rows.append(raw)
@@ -239,7 +246,7 @@ def import_products() -> tuple[int, int, int]:
 
         if not raw_uid:
             generated_count += 1
-            uid = f"generated-25062026-row-{source_row}-{slugify(name)}"
+            uid = f"generated-07072026-row-{source_row}-{slugify(name)}"
             status = "generated_missing_uid"
         elif raw_uid in seen_uids:
             duplicate_count += 1
@@ -274,7 +281,7 @@ def import_products() -> tuple[int, int, int]:
         rows.append(output)
 
     with OUTPUT_CSV.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=OUTPUT_COLUMNS)
+        writer = csv.DictWriter(handle, fieldnames=OUTPUT_COLUMNS, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
