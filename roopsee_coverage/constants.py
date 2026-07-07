@@ -15,7 +15,16 @@ LIPS_SHEET = "Lips"
 EYES_SHEET = "Eyes"
 
 QUIZ_OPTIONS = {
-    "skinTypes": ["Oily", "Dry", "Normal", "Combination"],
+    "skinTypes": [
+        "Oily",
+        "Oily+Sensitive",
+        "Dry",
+        "Dry+Sensitive",
+        "Normal",
+        "Normal+Sensitive",
+        "Combination",
+        "Combination+Sensitive",
+    ],
     "faceBodyConcerns": [
         "Acne",
         "Body Acne",

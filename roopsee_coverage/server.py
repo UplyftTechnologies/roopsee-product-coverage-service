@@ -21,18 +21,18 @@ from .profiles import (
 COVERAGE_MODES = {
     "all_pnc": {
         "label": "All PnC Combinations",
-        "description": "4 skin types * 14 single-concern choices * 9 special-condition states * 4 age states",
-        "formula": "4 * 14 * 9 * 4 = 2,016",
+        "description": "8 skin profiles * 14 single-concern choices * 9 special-condition states * 4 age states",
+        "formula": "8 * 14 * 9 * 4 = 4,032",
     },
     "skin_concern_type": {
         "label": "Skin Concern Type",
         "description": "Skin type plus concern group/set; age and special conditions not selected.",
-        "formula": "4 * 14 = 56",
+        "formula": "8 * 14 = 112",
     },
     "with_special_conditions": {
         "label": "With Special Conditions",
         "description": "Skin type plus concern group/set plus special-condition state; age not selected.",
-        "formula": "4 * 14 * 9 = 504",
+        "formula": "8 * 14 * 9 = 1,008",
     },
     "representative": {
         "label": "Quick Representative Sample",

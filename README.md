@@ -78,9 +78,9 @@ Accepts the same profile input as `/api/recommend` and returns only the tiered A
 
 Runs the coverage audit for one of the supported modes:
 
-- `all_pnc`: `2,016` rows using the final one-concern PnC formula.
-- `skin_concern_type`: `56` rows for skin type plus one concern.
-- `with_special_conditions`: `504` rows for skin type plus one concern plus special-condition state.
+- `all_pnc`: `4,032` rows using the final one-concern PnC formula.
+- `skin_concern_type`: `112` rows for skin profile plus one concern.
+- `with_special_conditions`: `1,008` rows for skin profile plus one concern plus special-condition state.
 - `representative`: `72` rows for quick smoke testing only.
 
 Use `row_limit=50` to calculate full summary counts but return only the weakest rows needed for the app preview.
@@ -93,7 +93,7 @@ Shows workbook/catalog counts and score coverage gaps.
 
 The included frontend is served from `/` and lets you:
 
-- choose skin type, one of the 14 July-workbook concerns, special conditions, age, and gender,
+- choose one of the 8 sheet-backed skin profiles, one of the 14 July-workbook concerns, special conditions, age, and gender,
 - submit the same JSON shape the app can send,
 - view product cards sorted by score,
 - filter returned products by score band, category, product type, and score sheet,
@@ -148,12 +148,12 @@ python tools/export_profile_coverage_workbook.py \
 The export follows this PnC formula:
 
 ```text
-4C1 skin profile
+8C1 skin profile
 × 14C1 concern combinations
 × (3C0 + 3C1 + 3C2 + 3C3 + explicit None) special-condition states
 × 4 age states
-= 4 × 14 × 9 × 4
-= 2,016 rows
+= 8 × 14 × 9 × 4
+= 4,032 rows
 ```
 
 The workbook also includes smaller subsheets for `Skin Concern Type` and `With Special Conditions`.

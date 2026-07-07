@@ -230,7 +230,7 @@ def write_assumptions(wb: Workbook, assumptions: dict[str, Any]) -> None:
         ("Returned products", "Only products present in products.csv and matched by Product UID."),
         ("Gender", "Removed from final combination grid."),
         ("PnC formula", assumptions["formula"]),
-        ("Skin profile", "4C1 = 4"),
+        ("Skin profile", "8C1 = 8"),
         ("Concern formula", "14C1 = 14"),
         ("Special-condition formula", "3C0 + 3C1 + 3C2 + 3C3 + explicit None = 1 + 3 + 3 + 1 + 1 = 9"),
         ("Age factor", "4 states: Under 16, 17-25, Above 25, Not selected"),
@@ -299,8 +299,8 @@ def export_workbook(score_workbook: Path, products_csv: Path, output_path: Path)
     lips_eye_count = len([item for item in concern_combinations() if item["concern_group"] == "Lips & Eyes"])
     health = engine.health()
     assumptions = {
-        "formula": "4C1 * 14C1 * (3C0 + 3C1 + 3C2 + 3C3 + None) * 4 = 2,016",
-        "skin_types": 4,
+        "formula": "8C1 * 14C1 * (3C0 + 3C1 + 3C2 + 3C3 + None) * 4 = 4,032",
+        "skin_types": 8,
         "age_states": 4,
         "face_concern_combinations": face_count,
         "lips_eye_concern_combinations": lips_eye_count,

@@ -24,7 +24,10 @@ def age_column(age: str) -> str | None:
 def is_sensitive_profile(profile: dict[str, Any]) -> bool:
     face_concerns = [norm_label(item) for item in profile.get("selectedFaceBodyConcerns", [])]
     lips_eye = [norm_label(item) for item in profile.get("selectedLipsEyesConcerns", [])]
-    return any(item in {"sensitivity", "sensitive eye", "sensitive eyes"} for item in face_concerns + lips_eye)
+    return any(
+        item in {"sensitivity", "redness irritation", "sensitive eye", "sensitive eyes"}
+        for item in face_concerns + lips_eye
+    )
 
 
 def is_under_16_profile(profile: dict[str, Any]) -> bool:
@@ -37,7 +40,8 @@ def has_active_special_condition(profile: dict[str, Any]) -> bool:
 
 
 def is_dry_or_sensitive_profile(profile: dict[str, Any]) -> bool:
-    return norm_label(profile.get("selectedSkinType", "")) == "dry" or is_sensitive_profile(profile)
+    skin_type = norm_label(profile.get("selectedSkinType", ""))
+    return skin_type in {"dry", "dry sensitive"} or "sensitive" in skin_type or is_sensitive_profile(profile)
 
 
 def profile_has_aging(profile: dict[str, Any]) -> bool:
@@ -45,7 +49,21 @@ def profile_has_aging(profile: dict[str, Any]) -> bool:
 
 
 def skin_column(skin_type: str, sensitive: bool) -> str:
-    base = clean_text(skin_type).title()
+    raw = clean_text(skin_type)
+    normalized = norm_label(raw)
+    direct_columns = {
+        "oily sensitive": "Oily+Sensitive Score",
+        "oily s": "Oily+Sensitive Score",
+        "dry sensitive": "Dry+Sensitive Score",
+        "dry s": "Dry+Sensitive Score",
+        "normal sensitive": "Normal+Sensitive Score",
+        "normal s": "Normal+Sensitive Score",
+        "combination sensitive": "Combination+Sensitive Score",
+        "combination s": "Combination+Sensitive Score",
+    }
+    if normalized in direct_columns:
+        return direct_columns[normalized]
+    base = raw.title()
     if base not in {"Oily", "Dry", "Normal", "Combination"}:
         base = "Normal"
     return f"{base}+Sensitive Score" if sensitive else f"{base} Score"

@@ -331,7 +331,7 @@
 
       .routine-board {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: 1fr;
         gap: 16px;
       }
 
@@ -360,6 +360,7 @@
 
       .routine-list {
         display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 10px;
       }
 
@@ -805,8 +806,8 @@
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .routine-board {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+        .routine-list {
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         }
       }
 
@@ -823,6 +824,7 @@
         .filters,
         .product-grid,
         .routine-board,
+        .routine-list,
         .modal-grid {
           grid-template-columns: 1fr;
         }
@@ -986,7 +988,16 @@
       let recommendTimer = null;
 
       const options = {
-        skinTypes: ["Oily", "Dry", "Normal", "Combination"],
+        skinTypes: [
+          "Oily",
+          "Oily+Sensitive",
+          "Dry",
+          "Dry+Sensitive",
+          "Normal",
+          "Normal+Sensitive",
+          "Combination",
+          "Combination+Sensitive",
+        ],
         faceBodyConcerns: [
           "Acne",
           "Body Acne",
