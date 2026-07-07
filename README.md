@@ -66,7 +66,7 @@ The routine object chooses the highest scored product for each slot in the curre
 - Value Fit AM/PM: best score with effective price below `1000`.
 - AM slots: cleanser, moisturiser, sunscreen.
 - PM slots: serum, moisturiser, cleanser.
-- Weekly: best sheet mask and best clay mask by score, independent of price tier.
+- Weekly: top 2 mask products by score, independent of mask type and price tier.
 - If multiple products have the same score for a slot, any one tied product can be used.
 - Serums become night-only for under-16, dry/sensitive, pregnancy, or breastfeeding profiles.
 

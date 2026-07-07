@@ -22,10 +22,7 @@ ROUTINE_SLOTS = {
     ],
 }
 
-WEEKLY_ROUTINE_SLOTS = [
-    {"key": "sheet_mask", "label": "Sheet Mask", "aliases": {"sheet mask"}},
-    {"key": "clay_mask", "label": "Clay Mask", "aliases": {"clay mask"}},
-]
+WEEKLY_MASK_COUNT = 2
 
 ROUTINE_TIERS = {
     "premium": {
@@ -93,11 +90,13 @@ def matches_routine_slot(product: dict[str, Any], slot: dict[str, Any]) -> bool:
         return normalized == "moisturizer" or product_type in {"body lotion", "body cream"}
     if key == "sunscreen":
         return normalized == "sunscreen" or "sunscreen" in text or "spf" in text
-    if key == "sheet_mask":
-        return product_type == "sheet mask" or "sheet mask" in text
-    if key == "clay_mask":
-        return product_type == "mask" and any(token in text for token in ["clay", "kaolin", "bentonite", "volcanic"])
     return product_type in slot["aliases"]
+
+
+def is_mask_product(product: dict[str, Any]) -> bool:
+    product_type = normalize_product_type(product.get("product_type", ""))
+    text = product_search_text(product)
+    return "mask" in product_type or "masque" in product_type or "mask" in text or "masque" in text
 
 
 def matches_routine_tier(product: dict[str, Any], tier: dict[str, Any]) -> bool:
@@ -123,18 +122,25 @@ def select_routine_product(products: list[dict[str, Any]], slot: dict[str, Any],
     return None
 
 
-def select_best_slot_product(products: list[dict[str, Any]], slot: dict[str, Any]) -> dict[str, Any] | None:
+def select_best_mask_products(products: list[dict[str, Any]], count: int = WEEKLY_MASK_COUNT) -> list[dict[str, Any]]:
+    selected: list[dict[str, Any]] = []
+    seen_uids: set[str] = set()
     for product in products:
-        if matches_routine_slot(product, slot):
-            return product
-    return None
+        uid = norm_key(product.get("product_uid") or product.get("product_name"))
+        if uid in seen_uids or not is_mask_product(product):
+            continue
+        selected.append(product)
+        seen_uids.add(uid)
+        if len(selected) >= count:
+            break
+    return selected
 
 
 def build_routine(products: list[dict[str, Any]]) -> dict[str, Any]:
     routine: dict[str, Any] = {
         "tiers": {},
         "missing_slots": [],
-        "selection_basis": "highest_scored_product_per_routine_slot_from_current_profile_results_with_price_tiers",
+        "selection_basis": "highest_scored_product_per_routine_slot_from_current_profile_results_with_price_tiers_and_top_two_weekly_masks",
     }
     for tier_key, tier in ROUTINE_TIERS.items():
         tier_payload: dict[str, Any] = {
@@ -164,17 +170,20 @@ def build_routine(products: list[dict[str, Any]]) -> dict[str, Any]:
         routine["tiers"][tier_key] = tier_payload
 
     routine["weekly"] = []
-    for slot in WEEKLY_ROUTINE_SLOTS:
-        product = select_best_slot_product(products, slot)
+    weekly_products = select_best_mask_products(products)
+    for index in range(WEEKLY_MASK_COUNT):
+        product = weekly_products[index] if index < len(weekly_products) else None
+        slot_key = f"mask_{index + 1}"
+        label = f"Best Mask {index + 1}"
         item = {
             "period": "weekly",
-            "slot": slot["key"],
-            "label": slot["label"],
+            "slot": slot_key,
+            "label": label,
             "product": product,
         }
         routine["weekly"].append(item)
         if product is None:
-            routine["missing_slots"].append({"period": "weekly", "slot": slot["key"], "label": slot["label"]})
+            routine["missing_slots"].append({"period": "weekly", "slot": slot_key, "label": label})
 
     routine["am"] = routine["tiers"].get("premium", {}).get("am", [])
     routine["pm"] = routine["tiers"].get("premium", {}).get("pm", [])
