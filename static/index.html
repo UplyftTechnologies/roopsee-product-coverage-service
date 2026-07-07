@@ -874,6 +874,9 @@
         <div class="section-title">Skin Type *</div>
         <div class="chips" id="skinTypeChips"></div>
 
+        <div class="section-title">Sensitive? *</div>
+        <div class="chips" id="sensitiveChips"></div>
+
         <div class="section-title">Skin Concern (Choose 1) *</div>
         <div class="chips" id="faceConcernChips"></div>
         <div class="chips" id="lipsConcernChips" style="display: none"></div>
@@ -885,9 +888,8 @@
           <div>
             <div class="section-title">Age</div>
             <select id="ageSelect">
-              <option>Under 16</option>
-              <option>17-25</option>
-              <option>Above 25</option>
+              <option>Teen</option>
+              <option>Adult</option>
             </select>
           </div>
           <div>
@@ -975,6 +977,7 @@
     <script>
       const state = {
         selectedSkinType: "Oily",
+        selectedSensitive: false,
         selectedFaceBodyConcerns: ["Acne"],
         selectedLipsEyesConcerns: [],
         selectedSpecialConditions: ["None"],
@@ -990,14 +993,11 @@
       const options = {
         skinTypes: [
           "Oily",
-          "Oily+Sensitive",
           "Dry",
-          "Dry+Sensitive",
           "Normal",
-          "Normal+Sensitive",
           "Combination",
-          "Combination+Sensitive",
         ],
+        sensitivityOptions: ["No", "Yes"],
         faceBodyConcerns: [
           "Acne",
           "Body Acne",
@@ -1033,6 +1033,7 @@
           age: document.querySelector("#ageSelect").value,
           selectedGender: document.querySelector("#genderSelect").value,
           selectedSkinType: state.selectedSkinType,
+          selectedSensitive: state.selectedSensitive,
           selectedFaceBodyConcerns: state.selectedFaceBodyConcerns,
           selectedLipsEyesConcerns: state.selectedLipsEyesConcerns,
           selectedSpecialConditions: state.selectedSpecialConditions,
@@ -1087,6 +1088,9 @@
         sanitizeSpecialState();
         renderChips("#skinTypeChips", options.skinTypes, (item) => state.selectedSkinType === item, (item) => {
           state.selectedSkinType = item;
+        });
+        renderChips("#sensitiveChips", options.sensitivityOptions, (item) => state.selectedSensitive === (item === "Yes"), (item) => {
+          state.selectedSensitive = item === "Yes";
         });
         renderChips("#faceConcernChips", options.faceBodyConcerns, (item) => state.selectedFaceBodyConcerns.includes(item), (item) => {
           state.selectedFaceBodyConcerns = chooseSingle(item);
@@ -1364,7 +1368,8 @@
 
       function updateProfilePill() {
         const concerns = [...state.selectedFaceBodyConcerns, ...state.selectedLipsEyesConcerns];
-        document.querySelector("#profilePill").textContent = `${state.selectedSkinType} · ${concerns.join(", ") || "No concern"}`;
+        const sensitivity = state.selectedSensitive ? "Sensitive" : "Non-sensitive";
+        document.querySelector("#profilePill").textContent = `${state.selectedSkinType} · ${sensitivity} · ${concerns.join(", ") || "No concern"}`;
       }
 
       async function recommend() {

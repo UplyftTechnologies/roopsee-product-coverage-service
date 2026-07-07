@@ -6,6 +6,14 @@ from .utils import clean_text, norm_label
 
 
 PREGNANCY_RELATED_CONDITIONS = {"pregnant", "breastfeeding"}
+BASE_SKIN_TYPES = {
+    "oily": "Oily",
+    "dry": "Dry",
+    "normal": "Normal",
+    "combination": "Combination",
+}
+SENSITIVE_TRUE_VALUES = {"yes", "true", "1", "y", "sensitive"}
+SENSITIVE_FALSE_VALUES = {"no", "false", "0", "n", "not sensitive", "none"}
 
 
 def is_male_gender(gender: Any) -> bool:
@@ -34,8 +42,38 @@ def sanitize_special_conditions(special_conditions: list[str], gender: Any) -> t
     return sanitized or ["None"], adjustments
 
 
+def sensitive_flag(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    label = norm_label(value)
+    if not label:
+        return None
+    if label in SENSITIVE_TRUE_VALUES:
+        return True
+    if label in SENSITIVE_FALSE_VALUES:
+        return False
+    return None
+
+
+def sanitize_skin_type_and_sensitivity(profile: dict[str, Any]) -> tuple[str, bool]:
+    raw_skin_type = clean_text(profile.get("selectedSkinType", "Normal"))
+    skin_key = norm_label(raw_skin_type)
+    inferred_sensitive = "sensitive" in skin_key
+    base_skin_key = norm_label(skin_key.replace("sensitive", ""))
+    base_skin_type = BASE_SKIN_TYPES.get(base_skin_key, "Normal")
+
+    explicit_sensitive = sensitive_flag(profile.get("selectedSensitive"))
+    if explicit_sensitive is None:
+        explicit_sensitive = sensitive_flag(profile.get("isSensitive"))
+
+    return base_skin_type, inferred_sensitive if explicit_sensitive is None else explicit_sensitive
+
+
 def sanitize_profile(profile: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
     sanitized = dict(profile)
+    skin_type, selected_sensitive = sanitize_skin_type_and_sensitivity(profile)
+    sanitized["selectedSkinType"] = skin_type
+    sanitized["selectedSensitive"] = selected_sensitive
     special_conditions = profile.get("selectedSpecialConditions") or ["None"]
     sanitized_specials, adjustments = sanitize_special_conditions(
         [clean_text(item) for item in special_conditions],

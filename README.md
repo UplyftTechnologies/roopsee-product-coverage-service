@@ -49,9 +49,10 @@ Input shape:
 
 ```json
 {
-  "age": "Under 16",
+  "age": "Teen",
   "selectedGender": "male",
   "selectedSkinType": "Oily",
+  "selectedSensitive": false,
   "selectedFaceBodyConcerns": ["Acne"],
   "selectedLipsEyesConcerns": [],
   "selectedSpecialConditions": ["Excessive Dryness"]
@@ -78,7 +79,7 @@ Accepts the same profile input as `/api/recommend` and returns only the tiered A
 
 Runs the coverage audit for one of the supported modes:
 
-- `all_pnc`: `4,032` rows using the final one-concern PnC formula.
+- `all_pnc`: `2,016` rows using the final one-concern PnC formula.
 - `skin_concern_type`: `112` rows for skin profile plus one concern.
 - `with_special_conditions`: `1,008` rows for skin profile plus one concern plus special-condition state.
 - `representative`: `72` rows for quick smoke testing only.
@@ -93,7 +94,7 @@ Shows workbook/catalog counts and score coverage gaps.
 
 The included frontend is served from `/` and lets you:
 
-- choose one of the 8 sheet-backed skin profiles, one of the 14 July-workbook concerns, special conditions, age, and gender,
+- choose one of 4 base skin types, mark sensitive yes/no to cover all 8 sheet-backed skin profiles, choose one of the 14 July-workbook concerns, special conditions, age, and gender,
 - submit the same JSON shape the app can send,
 - view product cards sorted by score,
 - filter returned products by score band, category, product type, and score sheet,
@@ -148,12 +149,13 @@ python tools/export_profile_coverage_workbook.py \
 The export follows this PnC formula:
 
 ```text
-8C1 skin profile
+4C1 skin type
+× 2 sensitivity states
 × 14C1 concern combinations
 × (3C0 + 3C1 + 3C2 + 3C3 + explicit None) special-condition states
-× 4 age states
-= 8 × 14 × 9 × 4
-= 4,032 rows
+× 2 age states
+= 4 × 2 × 14 × 9 × 2
+= 2,016 rows
 ```
 
 The workbook also includes smaller subsheets for `Skin Concern Type` and `With Special Conditions`.

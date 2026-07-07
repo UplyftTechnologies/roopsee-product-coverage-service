@@ -29,6 +29,7 @@ from roopsee_coverage.profiles import (
 HEADERS = [
     "Profile ID",
     "Skin Type",
+    "Sensitive",
     "Age",
     "Concern Group",
     "Face & Body Concerns",
@@ -81,6 +82,7 @@ def profile_row(profile_id: int, engine: RecommendationEngine, profile: dict[str
     row = [
         f"profile_{profile_id:05d}",
         profile["selectedSkinType"],
+        profile.get("sensitivityState") or ("Yes" if profile.get("selectedSensitive") else "No"),
         profile["age"],
         profile.get("concernGroup", ""),
         ", ".join(profile.get("selectedFaceBodyConcerns", [])),
@@ -121,31 +123,32 @@ def style_sheet(ws, table_name: str) -> None:
     widths = {
         "A": 14,
         "B": 16,
-        "C": 14,
-        "D": 16,
-        "E": 34,
+        "C": 12,
+        "D": 14,
+        "E": 16,
         "F": 34,
-        "G": 30,
-        "H": 28,
-        "I": 18,
-        "J": 16,
-        "K": 15,
+        "G": 34,
+        "H": 30,
+        "I": 28,
+        "J": 18,
+        "K": 16,
         "L": 15,
         "M": 15,
         "N": 15,
         "O": 15,
-        "P": 13,
-        "Q": 14,
+        "P": 15,
+        "Q": 13,
         "R": 14,
         "S": 14,
         "T": 14,
         "U": 14,
-        "V": 12,
+        "V": 14,
         "W": 12,
-        "X": 18,
-        "Y": 64,
-        "Z": 80,
+        "X": 12,
+        "Y": 18,
+        "Z": 64,
         "AA": 80,
+        "AB": 80,
     }
     for column, width in widths.items():
         ws.column_dimensions[column].width = width
@@ -230,12 +233,12 @@ def write_assumptions(wb: Workbook, assumptions: dict[str, Any]) -> None:
         ("Returned products", "Only products present in products.csv and matched by Product UID."),
         ("Gender", "Removed from final combination grid."),
         ("PnC formula", assumptions["formula"]),
-        ("Skin profile", "8C1 = 8"),
+        ("Skin profile", "4C1 skin types * 2 sensitivity states = 8 effective skin profiles"),
         ("Concern formula", "14C1 = 14"),
         ("Special-condition formula", "3C0 + 3C1 + 3C2 + 3C3 + explicit None = 1 + 3 + 3 + 1 + 1 = 9"),
-        ("Age factor", "4 states: Under 16, 17-25, Above 25, Not selected"),
-        ("Age", "Under 16, 17-25, Above 25, and Not selected."),
-        ("Not selected age handling", "Age score is skipped; it is not treated as Above 25."),
+        ("Age factor", "2 states: Teen and Adult"),
+        ("Age", "Teen uses <16. Adult combines 17-25 and +>25 as one age component."),
+        ("Not selected age handling", "Age score is skipped only on subsheets where age is not considered."),
         ("Concern rule", "Choose exactly 1 of the 14 July-workbook concern columns."),
         ("Face & Body concern combinations", assumptions["face_concern_combinations"]),
         ("Lips & Eyes concern combinations", "0 (inactive in July one-concern flow)"),
@@ -267,7 +270,7 @@ def export_workbook(score_workbook: Path, products_csv: Path, output_path: Path)
     wb = Workbook()
     wb.remove(wb.active)
 
-    all_profiles = all_profile_combinations(include_optional_age=True)
+    all_profiles = all_profile_combinations(include_optional_age=False)
     skin_concern_profiles = skin_concern_type_combinations()
     special_profiles = skin_concern_special_combinations()
 
@@ -299,9 +302,10 @@ def export_workbook(score_workbook: Path, products_csv: Path, output_path: Path)
     lips_eye_count = len([item for item in concern_combinations() if item["concern_group"] == "Lips & Eyes"])
     health = engine.health()
     assumptions = {
-        "formula": "8C1 * 14C1 * (3C0 + 3C1 + 3C2 + 3C3 + None) * 4 = 4,032",
-        "skin_types": 8,
-        "age_states": 4,
+        "formula": "4C1 skin types * 2 sensitivity states * 14C1 * (3C0 + 3C1 + 3C2 + 3C3 + None) * 2 ages = 2,016",
+        "skin_types": 4,
+        "sensitivity_states": 2,
+        "age_states": 2,
         "face_concern_combinations": face_count,
         "lips_eye_concern_combinations": lips_eye_count,
         "concern_combinations": face_count + lips_eye_count,

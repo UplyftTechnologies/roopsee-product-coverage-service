@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .constants import (
+    AGE_COLUMN_GROUP_MAP,
     AGE_COLUMN_MAP,
     EYE_CONCERN_MAP,
     EYES_SHEET,
@@ -21,17 +22,24 @@ def age_column(age: str) -> str | None:
     return AGE_COLUMN_MAP.get(norm_label(age))
 
 
+def age_columns(age: str) -> list[str]:
+    return AGE_COLUMN_GROUP_MAP.get(norm_label(age), [])
+
+
 def is_sensitive_profile(profile: dict[str, Any]) -> bool:
-    face_concerns = [norm_label(item) for item in profile.get("selectedFaceBodyConcerns", [])]
-    lips_eye = [norm_label(item) for item in profile.get("selectedLipsEyesConcerns", [])]
-    return any(
-        item in {"sensitivity", "redness irritation", "sensitive eye", "sensitive eyes"}
-        for item in face_concerns + lips_eye
-    )
+    selected_sensitive = profile.get("selectedSensitive")
+    if isinstance(selected_sensitive, bool):
+        return selected_sensitive
+    sensitive_label = norm_label(selected_sensitive)
+    if sensitive_label in {"yes", "true", "1", "y", "sensitive"}:
+        return True
+    if sensitive_label in {"no", "false", "0", "n", "not sensitive", "none"}:
+        return False
+    return "sensitive" in norm_label(profile.get("selectedSkinType", ""))
 
 
 def is_under_16_profile(profile: dict[str, Any]) -> bool:
-    return age_column(clean_text(profile.get("age", ""))) == "<16"
+    return age_columns(clean_text(profile.get("age", ""))) == ["<16"]
 
 
 def has_active_special_condition(profile: dict[str, Any]) -> bool:
@@ -260,11 +268,20 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
     product_type = catalog["product_type"] or row.product_type
     rule = scoring_rule_for_product_type(product_type)
 
-    age_header = age_column(clean_text(profile.get("age", "")))
-    age_score = row.scores.get(age_header) if age_header else None
-    if rule["age"] and age_header and age_score is not None:
-        components.append({"name": f"Age {age_header}", "score": sheet_score(age_score), "source_column": age_header})
-        reasons.append(f"Age fit {age_header}: {age_score:g}")
+    selected_age = clean_text(profile.get("age", ""))
+    age_headers = age_columns(selected_age)
+    age_pairs = [(header, row.scores[header]) for header in age_headers if header in row.scores]
+    if rule["age"] and age_pairs:
+        if len(age_pairs) == 1:
+            age_header, age_score = age_pairs[0]
+            components.append({"name": f"Age {age_header}", "score": sheet_score(age_score), "source_column": age_header})
+            reasons.append(f"Age fit {age_header}: {age_score:g}")
+        else:
+            age_component_score = rounded_average_score([{"score": value} for _, value in age_pairs])
+            source_columns = ", ".join(header for header, _ in age_pairs)
+            score_text = ", ".join(f"{header}: {value:g}" for header, value in age_pairs)
+            components.append({"name": f"Age {selected_age}", "score": age_component_score, "source_column": source_columns})
+            reasons.append(f"Age fit {selected_age} via {score_text}")
 
     concern_pairs = concern_headers_for_row(row, profile) if rule["concern"] else []
     for concern, headers in concern_pairs:

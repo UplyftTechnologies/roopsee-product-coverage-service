@@ -17,14 +17,11 @@ EYES_SHEET = "Eyes"
 QUIZ_OPTIONS = {
     "skinTypes": [
         "Oily",
-        "Oily+Sensitive",
         "Dry",
-        "Dry+Sensitive",
         "Normal",
-        "Normal+Sensitive",
         "Combination",
-        "Combination+Sensitive",
     ],
+    "sensitivityOptions": ["No", "Yes"],
     "faceBodyConcerns": [
         "Acne",
         "Body Acne",
@@ -43,11 +40,12 @@ QUIZ_OPTIONS = {
     ],
     "lipsEyesConcerns": [],
     "specialConditions": ["Excessive Dryness", "Pregnant", "Breastfeeding", "None"],
-    "ages": ["Under 16", "17-25", "Above 25"],
+    "ages": ["Teen", "Adult"],
     "genders": ["male", "female", "other", "prefer not to say"],
 }
 
 AGE_COLUMN_MAP = {
+    "teen": "<16",
     "under 16": "<16",
     "below 16": "<16",
     "<16": "<16",
@@ -59,6 +57,22 @@ AGE_COLUMN_MAP = {
     "over 25": "+>25",
     "25+": "+>25",
     "+>25": "+>25",
+}
+
+AGE_COLUMN_GROUP_MAP = {
+    "teen": ["<16"],
+    "under 16": ["<16"],
+    "below 16": ["<16"],
+    "<16": ["<16"],
+    "16": ["<16"],
+    "adult": ["17-25", "+>25"],
+    "17-25": ["17-25"],
+    "17 - 25": ["17-25"],
+    "17 25": ["17-25"],
+    "above 25": ["+>25"],
+    "over 25": ["+>25"],
+    "25+": ["+>25"],
+    "+>25": ["+>25"],
 }
 
 FACE_CONCERN_MAP = {

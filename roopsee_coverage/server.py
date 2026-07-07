@@ -21,18 +21,18 @@ from .profiles import (
 COVERAGE_MODES = {
     "all_pnc": {
         "label": "All PnC Combinations",
-        "description": "8 skin profiles * 14 single-concern choices * 9 special-condition states * 4 age states",
-        "formula": "8 * 14 * 9 * 4 = 4,032",
+        "description": "4 skin types * 2 sensitivity states * 14 single-concern choices * 9 special-condition states * 2 age states",
+        "formula": "4 * 2 * 14 * 9 * 2 = 2,016",
     },
     "skin_concern_type": {
         "label": "Skin Concern Type",
         "description": "Skin type plus concern group/set; age and special conditions not selected.",
-        "formula": "8 * 14 = 112",
+        "formula": "4 * 2 * 14 = 112",
     },
     "with_special_conditions": {
         "label": "With Special Conditions",
         "description": "Skin type plus concern group/set plus special-condition state; age not selected.",
-        "formula": "8 * 14 * 9 = 1,008",
+        "formula": "4 * 2 * 14 * 9 = 1,008",
     },
     "representative": {
         "label": "Quick Representative Sample",
@@ -49,7 +49,7 @@ def profiles_for_mode(mode: str, count: int | None = None) -> list[dict[str, Any
         return skin_concern_special_combinations()
     if mode == "representative":
         return representative_profiles(count or 72)
-    return all_profile_combinations(include_optional_age=True)
+    return all_profile_combinations(include_optional_age=False)
 
 
 def limit_coverage_rows(payload: dict[str, Any], row_limit: int = 0) -> dict[str, Any]:
