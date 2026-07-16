@@ -21,3 +21,4 @@ data/*.csv
 # Local environment files.
 .env
 .env.local
+.vercel

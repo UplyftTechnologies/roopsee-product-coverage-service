@@ -3,7 +3,19 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api/index"
+      "destination": {
+        "type": "service",
+        "service": "roopsee-product-coverage-service"
+      }
     }
-  ]
+  ],
+  "services": {
+    "roopsee-product-coverage-service": {
+      "root": ".",
+      "entrypoint": "api/index.py",
+      "runtime": "python3.12",
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
 }
