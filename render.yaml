@@ -2,6 +2,7 @@ services:
   - type: web
     name: roopsee-product-coverage-service
     runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: python app.py
     autoDeploy: true
