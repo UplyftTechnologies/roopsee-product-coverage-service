@@ -56,6 +56,17 @@ def profile_has_aging(profile: dict[str, Any]) -> bool:
     return any(norm_label(item) == "aging" for item in profile.get("selectedFaceBodyConcerns", []))
 
 
+def profile_has_anti_aging_wrinkles(profile: dict[str, Any]) -> bool:
+    concern_labels = profile.get("selectedFaceBodyConcerns", []) + profile.get("selectedLipsEyesConcerns", [])
+    for concern in concern_labels:
+        label = norm_label(concern)
+        if label in {"aging", "anti aging", "anti ageing", "wrinkles fine lines"}:
+            return True
+        if "wrinkle" in label or "fine line" in label:
+            return True
+    return False
+
+
 def skin_column(skin_type: str, sensitive: bool) -> str:
     raw = clean_text(skin_type)
     normalized = norm_label(raw)
@@ -267,6 +278,8 @@ def score_row_for_profile(row: ScoreRow, catalog: dict[str, Any], profile: dict[
     warnings: list[str] = []
     product_type = catalog["product_type"] or row.product_type
     rule = scoring_rule_for_product_type(product_type)
+    if normalized_product_type(product_type) == "cleanser" and profile_has_anti_aging_wrinkles(profile):
+        rule = {"age": False, "concern": False, "skin": True, "special": True}
 
     selected_age = clean_text(profile.get("age", ""))
     age_headers = age_columns(selected_age)
