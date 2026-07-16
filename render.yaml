@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: roopsee-product-coverage-service
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    autoDeploy: true
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
