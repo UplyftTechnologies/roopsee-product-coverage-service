@@ -12,10 +12,7 @@
   "services": {
     "roopsee-product-coverage-service": {
       "root": ".",
-      "entrypoint": "api/index.py",
-      "runtime": "python3.12",
-      "memory": 1024,
-      "maxDuration": 30
+      "entrypoint": "api/index.py"
     }
   }
 }
