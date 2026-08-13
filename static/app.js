@@ -130,6 +130,10 @@ function supportsConcern(product, concern) {
   return wanted.some((family) => families.has(family));
 }
 
+function currentConcern() {
+  return state.concern === "None" ? null : state.concern;
+}
+
 function productRelevanceCap(product, concern) {
   if (!concern || concern === "None") return 100;
   const type = product.normalizedType;
@@ -155,6 +159,86 @@ function confidenceCap(product) {
   if (product.confidence === "High") return 100;
   if (product.confidence === "Medium") return 96;
   return (product.support?.anchor || 0) >= 3 ? 92 : 88;
+}
+
+function directProfileFit(product, concern = currentConcern()) {
+  if (!concern) return true;
+  const type = product.normalizedType;
+  const supported = supportsConcern(product, concern);
+
+  if (type === "serum") return supported;
+  if (type === "cleanser") {
+    if (concern === "Wrinkles/Fine lines") return true;
+    return supported || ACNE_CONCERNS.has(concern);
+  }
+  if (type === "moisturizer") return HYDRATION_CONCERNS.has(concern) || supported;
+  if (type === "sunscreen") return PHOTO_CONCERNS.has(concern) || concern === "Dullness" || concern === "Barrier Repair" || supported;
+  if (type === "mask") return supported;
+  if (type === "toner") return supported || HYDRATION_CONCERNS.has(concern);
+  return supported;
+}
+
+function displayConfidenceCap(product, directFit) {
+  if (!directFit) return product.confidence === "High" ? 88 : 84;
+  if (product.confidence === "High") return 99;
+  if (product.confidence === "Medium") return 96;
+  return (product.support?.anchor || 0) >= 3 || (product.support?.exact || 0) >= 2 ? 90 : 86;
+}
+
+function supportIsTrustworthy(product) {
+  const support = product.support || {};
+  return (support.exact || 0) >= 4 || (support.anchor || 0) >= 2 || (support.family || 0) >= 20 || (support.typeFamily || 0) >= 30;
+}
+
+function customerFacingScore(product, featureScores, evidenceScore) {
+  const values = Object.values(featureScores).filter((value) => Number.isFinite(value));
+  if (evidenceScore <= -100 || values.some((value) => value <= -100)) return -100;
+
+  const directFit = directProfileFit(product);
+  const sorted = [...values].sort((left, right) => right - left);
+  const best = sorted[0] ?? evidenceScore;
+  const topThreeAverage = averageScore(sorted.slice(0, 3));
+  const highSignalCount = values.filter((value) => value >= 90).length;
+  const goodSignalCount = values.filter((value) => value >= 85).length;
+  const weakSignalCount = values.filter((value) => value < 60).length;
+  const hasProfileRisk = state.sensitive || state.age === "Teen" || state.specialConditions.some((condition) => condition !== "None");
+  const ingredientHero =
+    directFit &&
+    product.confidence === "High" &&
+    (product.support?.exact || 0) >= 25 &&
+    (product.support?.anchor || 0) >= 8 &&
+    featureScores.baseline >= 90 &&
+    featureScores.anchor >= 92 &&
+    featureScores.v2 >= 84 &&
+    values.every((value) => value >= 60);
+
+  let score = evidenceScore;
+  if (directFit && supportIsTrustworthy(product)) {
+    if (evidenceScore >= 92 && topThreeAverage >= 92 && highSignalCount >= 3) {
+      score = Math.max(score, 97);
+    } else if (evidenceScore >= 88 && topThreeAverage >= 90 && highSignalCount >= 2) {
+      score = Math.max(score, 95);
+    } else if (evidenceScore >= 84 && topThreeAverage >= 88 && goodSignalCount >= 3) {
+      score = Math.max(score, 92);
+    }
+  }
+
+  if (directFit && product.confidence === "High") {
+    if (!hasProfileRisk && ingredientHero) {
+      score = Math.max(score, 99);
+    } else if (!hasProfileRisk && supportIsTrustworthy(product) && evidenceScore >= 92 && topThreeAverage >= 91 && highSignalCount >= 3 && values.every((value) => value >= 88)) {
+      score = Math.max(score, 99);
+    } else if (best >= 95 && topThreeAverage >= 91 && highSignalCount >= 2) {
+      score = Math.max(score, 97);
+    }
+  }
+
+  let cap = displayConfidenceCap(product, directFit);
+  if (weakSignalCount >= 2) cap = Math.min(cap, 79);
+  else if (weakSignalCount === 1 && evidenceScore < 86) cap = Math.min(cap, 84);
+  if (hasProfileRisk && values.some((value) => value < 70)) cap = Math.min(cap, 84);
+
+  return roundScore(Math.min(score, cap));
 }
 
 function safetyAdjustment(product, layerName) {
@@ -197,7 +281,7 @@ function safetyAdjustment(product, layerName) {
 
 function profileLayerScore(product, layerName) {
   const type = product.normalizedType;
-  const concern = state.concern === "None" ? null : state.concern;
+  const concern = currentConcern();
   const skin = getLayerScore(product, layerName, skinColumn());
   const concernScore = concern ? getLayerScore(product, layerName, concern) : null;
   const safety = safetyAdjustment(product, layerName);
@@ -245,14 +329,15 @@ function computeScoredRows() {
       typeFamily: profileLayerScore(product, "typeFamily"),
       type: profileLayerScore(product, "type"),
     };
-    const visibleScore = roundScore(
+    const evidenceScore = roundScore(
       dataset.metadata.visibleScoreWeights.baseline * featureScores.baseline +
         dataset.metadata.visibleScoreWeights.v2 * featureScores.v2 +
         dataset.metadata.visibleScoreWeights.anchor * featureScores.anchor +
         dataset.metadata.visibleScoreWeights.type_family * featureScores.typeFamily +
         dataset.metadata.visibleScoreWeights.type * featureScores.type
     );
-    return { product, score: visibleScore, featureScores, rankingScore: visibleScore };
+    const finalScore = customerFacingScore(product, featureScores, evidenceScore);
+    return { product, score: finalScore, evidenceScore, featureScores, rankingScore: finalScore };
   });
 
   const baselineRank = rankQualities(rows, "baseline");
@@ -275,10 +360,10 @@ function computeScoredRows() {
   });
 
   return rows.sort((left, right) => {
-    const rankDiff = right.rankingScore - left.rankingScore;
-    if (rankDiff) return rankDiff;
     const scoreDiff = right.score - left.score;
     if (scoreDiff) return scoreDiff;
+    const rankDiff = right.rankingScore - left.rankingScore;
+    if (rankDiff) return rankDiff;
     return left.product.name.localeCompare(right.product.name);
   });
 }
@@ -355,6 +440,7 @@ function shortWhy(row) {
   const anchorSupport = product.support?.anchor || 0;
   const familyText = (product.families || []).slice(0, 3).join(", ") || "general fit";
   if (row.score <= -100) return "Safety rules block this product for the selected profile.";
+  if (row.score >= 95 && row.evidenceScore < row.score) return `Strong direct profile fit with customer-facing calibration; active families: ${familyText}.`;
   if (anchorSupport >= 3) return `Anchored by ${anchorSupport} similar doctor-reference products; active families: ${familyText}.`;
   return `Score uses ingredient sheet signals and category priors; active families: ${familyText}.`;
 }
@@ -527,7 +613,7 @@ function detailExplanation(row) {
       ${escapeHtml(profileRuleText(product))}
     </p>
     <p>
-      The visible score blends the ingredient-sheet score, calibrated ingredient model, nearest doctor-reference anchors, same-family priors, and same-type priors.
+      The final score is a customer-facing calibrated score. It starts from an evidence score of <strong>${scoreLabel(row.evidenceScore)}</strong>, then can move upward only when the product is a direct profile fit with strong ingredient, doctor-anchor, and category support.
       The strongest layer here is <strong>${escapeHtml(strongestLayer?.[0] || "anchor")}</strong>, with ${anchorSupport} doctor-anchor match(es) and ${confidence} confidence.
     </p>
     <p>Recognized active families: ${escapeHtml(families)}.</p>
@@ -575,6 +661,7 @@ function openProductDetail(uid) {
         <h2 class="modal-title" id="modal-title">${escapeHtml(product.name)}</h2>
         <div class="detail-grid">
           ${layerTile("Final score", row.score)}
+          ${layerTile("Evidence score", row.evidenceScore)}
           ${layerTile("Ingredient", row.featureScores.baseline)}
           ${layerTile("Calibrated", row.featureScores.v2)}
           ${layerTile("Anchor", row.featureScores.anchor)}
