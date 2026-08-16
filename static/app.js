@@ -190,11 +190,21 @@ function supportIsTrustworthy(product) {
   return (support.exact || 0) >= 4 || (support.anchor || 0) >= 2 || (support.family || 0) >= 20 || (support.typeFamily || 0) >= 30;
 }
 
+function excessiveDrynessRescueFit(product, concern = currentConcern()) {
+  if (!state.specialConditions.includes("Excessive Dryness")) return false;
+  const families = productFamilies(product);
+  const comfortsDryness = ["hydration", "barrier", "soothing", "emollient"].some((family) => families.has(family));
+  if (!comfortsDryness) return false;
+  if (concern === "Body Acne" && !["Body", "Face & Body"].includes(product.category)) return false;
+  return ["moisturizer", "cleanser", "sunscreen", "mask", "toner"].includes(product.normalizedType);
+}
+
 function customerFacingScore(product, featureScores, evidenceScore) {
   const values = Object.values(featureScores).filter((value) => Number.isFinite(value));
   if (evidenceScore <= -100 || values.some((value) => value <= -100)) return -100;
 
   const directFit = directProfileFit(product);
+  const drynessRescueFit = excessiveDrynessRescueFit(product);
   const sorted = [...values].sort((left, right) => right - left);
   const best = sorted[0] ?? evidenceScore;
   const topThreeAverage = averageScore(sorted.slice(0, 3));
@@ -216,11 +226,17 @@ function customerFacingScore(product, featureScores, evidenceScore) {
   if (directFit && supportIsTrustworthy(product)) {
     if (evidenceScore >= 92 && topThreeAverage >= 92 && highSignalCount >= 3) {
       score = Math.max(score, 97);
-    } else if (evidenceScore >= 88 && topThreeAverage >= 90 && highSignalCount >= 2) {
+    } else if (evidenceScore >= 86 && topThreeAverage >= 88 && highSignalCount >= 1 && goodSignalCount >= 3) {
       score = Math.max(score, 95);
     } else if (evidenceScore >= 84 && topThreeAverage >= 88 && goodSignalCount >= 3) {
       score = Math.max(score, 92);
+    } else if (evidenceScore >= 78 && topThreeAverage >= 84 && goodSignalCount >= 2) {
+      score = Math.max(score, 90);
     }
+  }
+
+  if (drynessRescueFit && supportIsTrustworthy(product) && evidenceScore >= 76 && topThreeAverage >= 80) {
+    score = Math.max(score, 90);
   }
 
   if (directFit && product.confidence === "High") {
@@ -233,10 +249,12 @@ function customerFacingScore(product, featureScores, evidenceScore) {
     }
   }
 
-  let cap = displayConfidenceCap(product, directFit);
+  let cap = drynessRescueFit && !directFit ? (product.confidence === "High" ? 92 : 90) : displayConfidenceCap(product, directFit);
   if (weakSignalCount >= 2) cap = Math.min(cap, 79);
   else if (weakSignalCount === 1 && evidenceScore < 86) cap = Math.min(cap, 84);
-  if (hasProfileRisk && values.some((value) => value < 70)) cap = Math.min(cap, 84);
+  if (hasProfileRisk && values.some((value) => value < 60)) cap = Math.min(cap, 84);
+  else if (hasProfileRisk && values.some((value) => value < 70)) cap = Math.min(cap, 92);
+  if (drynessRescueFit && !directFit) cap = Math.min(cap, 92);
 
   return roundScore(Math.min(score, cap));
 }
