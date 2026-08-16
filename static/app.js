@@ -20,6 +20,51 @@ const CONCERN_FAMILIES = {
 const HYDRATION_CONCERNS = new Set(["Dryness", "Dehydration", "Barrier Repair", "Redness/Irritation", "Dullness"]);
 const ACNE_CONCERNS = new Set(["Acne", "Body Acne", "Open Pores", "Comedones"]);
 const PHOTO_CONCERNS = new Set(["Tanning", "Dark Spots/Pigmentation", "Melasma", "Uneven Skin Tone"]);
+const FACE_CONCERNS = new Set(Object.keys(CONCERN_FAMILIES).filter((concern) => concern !== "Body Acne"));
+const ACTIVE_CLEANSER_TERMS = [
+  "pore",
+  "pores",
+  "salicylic",
+  "bha",
+  "aha",
+  "glycolic",
+  "lactic",
+  "mandelic",
+  "niacinamide",
+  "zinc pca",
+  "tea tree",
+  "charcoal",
+  "clay",
+  "acne",
+  "pimple",
+  "comedone",
+  "blackhead",
+  "exfoliat",
+];
+const COMFORT_CLEANSER_TERMS = [
+  "barrier",
+  "hydrate",
+  "hydrating",
+  "hydration",
+  "moistur",
+  "gentle",
+  "mild",
+  "calm",
+  "calming",
+  "soothing",
+  "ceramide",
+  "hyaluronic",
+  "glycerin",
+  "oat",
+  "aloe",
+  "cream",
+  "creamy",
+  "milk",
+  "milky",
+  "oil cleanser",
+  "cleansing oil",
+  "balm",
+];
 
 const SCORE_BINS = [
   { key: "90-100", label: "90-100", tone: "good", test: (score) => score >= 90 },
@@ -123,6 +168,22 @@ function productFamilies(product) {
   return new Set(product.families || []);
 }
 
+function productSearchText(product) {
+  return [
+    product.name,
+    product.brand,
+    product.productType,
+    product.primaryIngredients,
+    product.secondaryIngredients,
+    product.matchedPrimaryIngredients,
+    product.matchedSecondaryIngredients,
+    (product.families || []).join(" "),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
 function supportsConcern(product, concern) {
   if (!concern || concern === "None") return true;
   const wanted = CONCERN_FAMILIES[concern] || [];
@@ -132,6 +193,14 @@ function supportsConcern(product, concern) {
 
 function currentConcern() {
   return state.concern === "None" ? null : state.concern;
+}
+
+function categoryRelevanceCap(product, concern = currentConcern()) {
+  if (!concern || concern === "None") return 100;
+  if (concern === "Body Acne") return ["Body", "Face & Body"].includes(product.category) ? 100 : 82;
+  if (FACE_CONCERNS.has(concern) && product.category === "Body") return 74;
+  if (FACE_CONCERNS.has(concern) && (product.category === "Lips" || product.category === "Eye")) return 78;
+  return 100;
 }
 
 function productRelevanceCap(product, concern) {
@@ -190,6 +259,92 @@ function supportIsTrustworthy(product) {
   return (support.exact || 0) >= 4 || (support.anchor || 0) >= 2 || (support.family || 0) >= 20 || (support.typeFamily || 0) >= 30;
 }
 
+function hasActiveCleanserCue(product, concern = currentConcern()) {
+  if (!ACNE_CONCERNS.has(concern)) return supportsConcern(product, concern);
+  if (supportsConcern(product, concern)) return true;
+  const text = productSearchText(product);
+  return ACTIVE_CLEANSER_TERMS.some((term) => text.includes(term));
+}
+
+function hasComfortCleanserCue(product) {
+  const families = productFamilies(product);
+  if (["hydration", "barrier", "soothing", "emollient"].some((family) => families.has(family))) return true;
+  const text = productSearchText(product);
+  return COMFORT_CLEANSER_TERMS.some((term) => text.includes(term));
+}
+
+function profileSafetyCap(product) {
+  const layers = ["baseline", "v2", "anchor", "typeFamily", "type"];
+  const profileColumns = [];
+  if (state.age === "Teen") profileColumns.push("<16");
+  for (const condition of state.specialConditions) {
+    if (condition !== "None") profileColumns.push(specialColumn(condition));
+  }
+  if (!profileColumns.length) return 100;
+
+  let cap = 100;
+  for (const columnName of profileColumns) {
+    const values = layers.map((layerName) => getLayerScore(product, layerName, columnName));
+    if (values.some((value) => value <= -100)) return -100;
+    const top = Math.max(...values);
+    const average = averageScore(values);
+    if (top >= 85 && average >= 70) cap = Math.min(cap, 92);
+    else if (top >= 85) cap = Math.min(cap, 90);
+    else if (top >= 70) cap = Math.min(cap, 84);
+    else cap = Math.min(cap, 70);
+  }
+  return cap;
+}
+
+function cleanserProfileBoost(product) {
+  const concern = currentConcern();
+  if (product.normalizedType !== "cleanser" || !ACNE_CONCERNS.has(concern)) return null;
+  if (categoryRelevanceCap(product, concern) < 90) return null;
+
+  const safetyCap = profileSafetyCap(product);
+  if (safetyCap < 85) return null;
+
+  const layers = ["baseline", "v2", "anchor", "typeFamily", "type"];
+  const skinValues = layers.map((layerName) => getLayerScore(product, layerName, skinColumn()));
+  const concernValues = layers.map((layerName) => getLayerScore(product, layerName, concern));
+  const drynessValues = layers.map((layerName) => getLayerScore(product, layerName, "Excessive Dryness score"));
+  if (skinValues.some((value) => value <= -100) || concernValues.some((value) => value <= -100)) return null;
+
+  const skinTop = Math.max(...skinValues);
+  const concernTop = Math.max(...concernValues);
+  const drynessTop = Math.max(...drynessValues);
+  const skinAverage = averageScore(skinValues);
+  const concernAverage = averageScore(concernValues);
+  const hasProfileRisk = state.sensitive || state.age === "Teen" || state.specialConditions.some((condition) => condition !== "None");
+  const strongSupport = supportIsTrustworthy(product) || (product.support?.exact || 0) >= 10;
+  const excessiveDrynessProfile = state.specialConditions.includes("Excessive Dryness");
+
+  if (excessiveDrynessProfile && hasComfortCleanserCue(product) && skinTop >= 85 && drynessTop >= 85) {
+    return {
+      score: Math.min(product.confidence === "High" && strongSupport ? 91 : 90, safetyCap, confidenceCap(product), displayConfidenceCap(product, true)),
+      skinTop,
+      concernTop,
+    };
+  }
+
+  if (!hasActiveCleanserCue(product, concern) || !strongSupport || concernTop < 85 || skinTop < 60) return null;
+
+  let score = 90;
+  if (concernTop >= 90 && skinTop >= 88 && product.confidence === "High") {
+    score = hasProfileRisk ? 92 : 96;
+  } else if (concernTop >= 88 && skinTop >= 72) {
+    score = hasProfileRisk ? 91 : 94;
+  } else if (concernAverage >= 70 && skinAverage >= 65) {
+    score = hasProfileRisk ? 90 : 92;
+  }
+
+  return {
+    score: Math.min(score, safetyCap, confidenceCap(product), displayConfidenceCap(product, true)),
+    skinTop,
+    concernTop,
+  };
+}
+
 function excessiveDrynessRescueFit(product, concern = currentConcern()) {
   if (!state.specialConditions.includes("Excessive Dryness")) return false;
   const families = productFamilies(product);
@@ -205,6 +360,7 @@ function customerFacingScore(product, featureScores, evidenceScore) {
 
   const directFit = directProfileFit(product);
   const drynessRescueFit = excessiveDrynessRescueFit(product);
+  const cleanserBoost = cleanserProfileBoost(product);
   const sorted = [...values].sort((left, right) => right - left);
   const best = sorted[0] ?? evidenceScore;
   const topThreeAverage = averageScore(sorted.slice(0, 3));
@@ -239,6 +395,10 @@ function customerFacingScore(product, featureScores, evidenceScore) {
     score = Math.max(score, 90);
   }
 
+  if (cleanserBoost) {
+    score = Math.max(score, cleanserBoost.score);
+  }
+
   if (directFit && product.confidence === "High") {
     if (!hasProfileRisk && ingredientHero) {
       score = Math.max(score, 99);
@@ -255,6 +415,8 @@ function customerFacingScore(product, featureScores, evidenceScore) {
   if (hasProfileRisk && values.some((value) => value < 60)) cap = Math.min(cap, 84);
   else if (hasProfileRisk && values.some((value) => value < 70)) cap = Math.min(cap, 92);
   if (drynessRescueFit && !directFit) cap = Math.min(cap, 92);
+  if (cleanserBoost) cap = Math.max(cap, cleanserBoost.score);
+  cap = Math.min(cap, categoryRelevanceCap(product));
 
   return roundScore(Math.min(score, cap));
 }
@@ -320,7 +482,7 @@ function profileLayerScore(product, layerName) {
 
   let score = averageScore(components);
   if (score <= -100) return -100;
-  score = Math.min(score, productRelevanceCap(product, concern), confidenceCap(product), safety.cap);
+  score = Math.min(score, productRelevanceCap(product, concern), categoryRelevanceCap(product, concern), confidenceCap(product), safety.cap);
   return roundScore(score);
 }
 
