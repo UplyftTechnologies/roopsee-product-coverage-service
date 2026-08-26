@@ -15,7 +15,7 @@ The generated browser dataset is:
 data/final_scored_products.json
 ```
 
-It currently contains 14,119 unique products.
+It currently contains 7,172 high-confidence topical skincare products, filtered from 14,119 source products.
 
 ## How To Run
 
@@ -42,6 +42,12 @@ The visible score is a rounded 0-100 product score for the selected profile. The
 - Same product-type priors
 
 The product list is sorted using a hidden rank-fusion score so the most relevant products appear first, even when visible scores are close.
+
+For the full non-technical and technical scoring explanation, see:
+
+```text
+docs/SCORING_METHODOLOGY.md
+```
 
 ## Current Public Rules
 

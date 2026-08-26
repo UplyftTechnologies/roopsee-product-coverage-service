@@ -66,6 +66,22 @@ const COMFORT_CLEANSER_TERMS = [
   "balm",
 ];
 
+const PREGNANCY_BREASTFEEDING_BLOCK_TERMS = [
+  "retinol",
+  "retinal",
+  "retinoid",
+  "retinyl",
+  "tretinoin",
+  "adapalene",
+  "hydroquinone",
+];
+
+const SALICYLATE_TERMS = ["salicylic acid", "beta hydroxy", "willow bark", "salix alba", "salicylate"];
+const SALICYLATE_HIGH_STRENGTH_TERMS = ["chemical peel", "peel solution", "peeling solution", "aha bha peel", "body peel"];
+const KOJIC_TERMS = ["kojic acid", "kojic dipalmitate"];
+const EXFOLIANT_IRRITANT_TERMS = ["lactic acid", "glycolic acid", "mandelic acid", " aha", "fragrance", "parfum", "lemon peel"];
+const SOURCE_QUALITY_TERMS = ["removed", "not found in retailer full inci", "late or unknown-strength active", "no clear primary surfactant"];
+
 const SCORE_BINS = [
   { key: "90-100", label: "90-100", tone: "good", test: (score) => score >= 90 },
   { key: "80-89", label: "80-89", tone: "good", test: (score) => score >= 80 && score < 90 },
@@ -184,6 +200,21 @@ function productSearchText(product) {
     .toLowerCase();
 }
 
+function productFlagText(product) {
+  return [
+    ...(product.reviewFlags || []),
+    ...(product.sourceValidationFlags || []),
+    ...(product.formulaQualityFlags || []),
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function hasFormulaUncertainty(product) {
+  const flagText = productFlagText(product);
+  return SOURCE_QUALITY_TERMS.some((term) => flagText.includes(term));
+}
+
 function supportsConcern(product, concern) {
   if (!concern || concern === "None") return true;
   const wanted = CONCERN_FAMILIES[concern] || [];
@@ -271,6 +302,77 @@ function hasComfortCleanserCue(product) {
   if (["hydration", "barrier", "soothing", "emollient"].some((family) => families.has(family))) return true;
   const text = productSearchText(product);
   return COMFORT_CLEANSER_TERMS.some((term) => text.includes(term));
+}
+
+function textHasAny(text, terms) {
+  return terms.some((term) => text.includes(term));
+}
+
+function textHasSalicylate(text) {
+  return textHasAny(text, SALICYLATE_TERMS) || text.includes(" bha ") || text.endsWith(" bha") || text.startsWith("bha ");
+}
+
+function salicylatePercent(text) {
+  const patterns = [
+    /(\d+(?:\.\d+)?)\s*%\s*(?:salicylic|bha)/g,
+    /(?:salicylic|bha)[a-z\s]*?(\d+(?:\.\d+)?)\s*%/g,
+  ];
+  const values = [];
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      values.push(Number(match[1]));
+    }
+  }
+  return values.filter(Number.isFinite).length ? Math.max(...values.filter(Number.isFinite)) : null;
+}
+
+function highStrengthSalicylate(text) {
+  const percent = salicylatePercent(text);
+  return (Number.isFinite(percent) && percent > 2) || textHasAny(text, SALICYLATE_HIGH_STRENGTH_TERMS);
+}
+
+function isLeaveOnTreatment(product) {
+  const text = productSearchText(product);
+  if (product.normalizedType === "serum" || product.normalizedType === "toner") return true;
+  if (product.normalizedType === "cleanser" || product.normalizedType === "mask") return false;
+  return textHasAny(text, ["serum", "ampoule", "leave on", "leave-on", "spot corrector", "treatment gel", "acne gel"]);
+}
+
+function pregnancyBreastfeedingIngredientSafety(product) {
+  const isPregnant = state.specialConditions.includes("Pregnant");
+  const isBreastfeeding = state.specialConditions.includes("Breastfeeding");
+  if (!isPregnant && !isBreastfeeding) return { hardBlock: false, cap: 100, note: null };
+
+  const text = productSearchText(product);
+  if (textHasAny(text, PREGNANCY_BREASTFEEDING_BLOCK_TERMS)) {
+    return { hardBlock: true, cap: -100, note: "Not suggested for pregnancy or breastfeeding due to restricted active ingredients." };
+  }
+
+  let cap = 100;
+  const notes = [];
+
+  if (textHasSalicylate(text)) {
+    if (highStrengthSalicylate(text)) {
+      cap = Math.min(cap, isPregnant ? 60 : 65);
+      notes.push("Capped for pregnancy/breastfeeding because this appears to be a high-strength salicylate or peel-style product.");
+    } else if (isLeaveOnTreatment(product)) {
+      cap = Math.min(cap, isPregnant ? 82 : 84);
+      notes.push("Capped with limited-use caution for pregnancy/breastfeeding because it contains topical salicylate/BHA.");
+    } else {
+      cap = Math.min(cap, isPregnant ? 82 : 85);
+      notes.push("Capped with pregnancy/breastfeeding caution because it contains salicylate or willow-bark support.");
+    }
+  }
+
+  if (isPregnant && textHasAny(text, KOJIC_TERMS) && textHasAny(text, EXFOLIANT_IRRITANT_TERMS)) {
+    cap = Math.min(cap, 60);
+    notes.push("Capped for pregnancy because kojic/exfoliating/fragrant actives have limited pregnancy-specific certainty.");
+  } else if (isPregnant && textHasAny(text, KOJIC_TERMS)) {
+    cap = Math.min(cap, 70);
+    notes.push("Capped for pregnancy because kojic acid has limited pregnancy-specific certainty.");
+  }
+
+  return { hardBlock: false, cap, note: notes.join(" ") || null };
 }
 
 function profileSafetyCap(product) {
@@ -368,8 +470,10 @@ function customerFacingScore(product, featureScores, evidenceScore) {
   const goodSignalCount = values.filter((value) => value >= 85).length;
   const weakSignalCount = values.filter((value) => value < 60).length;
   const hasProfileRisk = state.sensitive || state.age === "Teen" || state.specialConditions.some((condition) => condition !== "None");
+  const formulaUncertain = hasFormulaUncertainty(product);
   const ingredientHero =
     directFit &&
+    !formulaUncertain &&
     product.confidence === "High" &&
     (product.support?.exact || 0) >= 25 &&
     (product.support?.anchor || 0) >= 8 &&
@@ -379,7 +483,7 @@ function customerFacingScore(product, featureScores, evidenceScore) {
     values.every((value) => value >= 60);
 
   let score = evidenceScore;
-  if (directFit && supportIsTrustworthy(product)) {
+  if (directFit && supportIsTrustworthy(product) && !formulaUncertain) {
     if (evidenceScore >= 92 && topThreeAverage >= 92 && highSignalCount >= 3) {
       score = Math.max(score, 97);
     } else if (evidenceScore >= 86 && topThreeAverage >= 88 && highSignalCount >= 1 && goodSignalCount >= 3) {
@@ -391,7 +495,7 @@ function customerFacingScore(product, featureScores, evidenceScore) {
     }
   }
 
-  if (drynessRescueFit && supportIsTrustworthy(product) && evidenceScore >= 76 && topThreeAverage >= 80) {
+  if (drynessRescueFit && supportIsTrustworthy(product) && !formulaUncertain && evidenceScore >= 76 && topThreeAverage >= 80) {
     score = Math.max(score, 90);
   }
 
@@ -399,7 +503,7 @@ function customerFacingScore(product, featureScores, evidenceScore) {
     score = Math.max(score, cleanserBoost.score);
   }
 
-  if (directFit && product.confidence === "High") {
+  if (directFit && product.confidence === "High" && !formulaUncertain) {
     if (!hasProfileRisk && ingredientHero) {
       score = Math.max(score, 99);
     } else if (!hasProfileRisk && supportIsTrustworthy(product) && evidenceScore >= 92 && topThreeAverage >= 91 && highSignalCount >= 3 && values.every((value) => value >= 88)) {
@@ -414,6 +518,9 @@ function customerFacingScore(product, featureScores, evidenceScore) {
   else if (weakSignalCount === 1 && evidenceScore < 86) cap = Math.min(cap, 84);
   if (hasProfileRisk && values.some((value) => value < 60)) cap = Math.min(cap, 84);
   else if (hasProfileRisk && values.some((value) => value < 70)) cap = Math.min(cap, 92);
+  if (formulaUncertain) {
+    cap = Math.min(cap, product.normalizedType === "cleanser" ? 72 : 84);
+  }
   if (drynessRescueFit && !directFit) cap = Math.min(cap, 92);
   if (cleanserBoost) cap = Math.max(cap, cleanserBoost.score);
   cap = Math.min(cap, categoryRelevanceCap(product));
@@ -425,6 +532,14 @@ function safetyAdjustment(product, layerName) {
   let cap = 100;
   const notes = [];
   const type = product.normalizedType;
+  const ingredientSafety = pregnancyBreastfeedingIngredientSafety(product);
+  if (ingredientSafety.hardBlock) {
+    return { hardBlock: true, cap: -100, notes: [ingredientSafety.note] };
+  }
+  if (ingredientSafety.cap < 100) {
+    cap = Math.min(cap, ingredientSafety.cap);
+    notes.push(ingredientSafety.note);
+  }
 
   if (state.age === "Teen") {
     const teenScore = getLayerScore(product, layerName, "<16");
@@ -443,6 +558,16 @@ function safetyAdjustment(product, layerName) {
     const column = specialColumn(condition);
     const specialScore = getLayerScore(product, layerName, column);
     if (specialScore <= -100) {
+      const salicylateCautionCap =
+        (condition === "Pregnant" || condition === "Breastfeeding") &&
+        ingredientSafety.cap > -100 &&
+        ingredientSafety.cap < 100 &&
+        textHasSalicylate(productSearchText(product));
+      if (salicylateCautionCap) {
+        cap = Math.min(cap, ingredientSafety.cap);
+        notes.push(ingredientSafety.note);
+        continue;
+      }
       return { hardBlock: true, cap: -100, notes: [`Not suggested for ${condition.toLowerCase()}.`] };
     }
     if (condition === "Excessive Dryness" && specialScore === 0) {
@@ -784,6 +909,7 @@ function detailExplanation(row) {
   const anchorSupport = product.support?.anchor || 0;
   const confidence = product.confidence.toLowerCase();
   const families = (product.families || []).join(", ") || "no recognized active family";
+  const qualityNotes = [...(product.sourceValidationFlags || []), ...(product.formulaQualityFlags || [])];
   const sandwich =
     (product.families || []).includes("retinoid") &&
     (state.age === "Teen" || state.skinType === "Dry" || state.sensitive || state.specialConditions.some((condition) => condition !== "None") || state.concern === "Wrinkles/Fine lines");
@@ -797,6 +923,11 @@ function detailExplanation(row) {
       The strongest layer here is <strong>${escapeHtml(strongestLayer?.[0] || "anchor")}</strong>, with ${anchorSupport} doctor-anchor match(es) and ${confidence} confidence.
     </p>
     <p>Recognized active families: ${escapeHtml(families)}.</p>
+    ${
+      qualityNotes.length
+        ? `<p><strong>Formula/source caution:</strong> ${escapeHtml(qualityNotes.join("; "))}.</p>`
+        : ""
+    }
     ${sandwich ? "<p><strong>Use note:</strong> If this is a retinoid-led product, use the sandwich method: moisturizer before and after the retinoid, especially for teen, dry, sensitive, pregnancy, breastfeeding, or special-condition profiles.</p>" : ""}
   `;
 }
