@@ -135,6 +135,7 @@ These are the product-behavior rules that can be discussed externally:
 | `data/source/retailer_products_rows.csv.gz` | Compressed retailer catalog export containing product metadata such as brand, price, URL, image, stock, and full ingredient text when available. |
 | `data/source/roopsee_ingredient_scores_v3.xlsx` | Ingredient scoring master used to convert ingredient evidence into scores across concerns, skin types, ages, and special conditions. |
 | `docs/SCORING_METHODOLOGY.md` | Detailed explanation of the scoring theory, formulas, gates, confidence logic, validation, and limitations. |
+| `docs/TOOLS_PIPELINE_MINDMAP.md` | Visual handover map showing the three tool files, their inputs, outputs, and how they connect. |
 | `render.yaml` | Render deployment configuration. |
 | `requirements.txt` | Python dependencies needed to run the app and rebuild datasets. |
 | `roopsee_coverage/__init__.py` | Marks `roopsee_coverage` as a Python package. |
