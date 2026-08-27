@@ -39,6 +39,8 @@ The current generated platform dataset contains:
 - Doctor-reference products: 384
 - Current final confidence filter: High only
 
+The phrase "topical-only filtering" means the final UI keeps products meant to be applied on skin. The source catalog may also contain oral supplements, tablets, capsules, gummies, ingestible powders, baby powder, and other rows that should not appear as skincare recommendations. Those rows can exist in the raw source data, but they are removed from the final visible product set.
+
 Product type coverage:
 
 - Serums: 1,713
@@ -831,25 +833,26 @@ Main deployed repo:
 roopsee-product-coverage-service
 ```
 
-Important files:
+Important handover files:
 
-```text
-static/data/final_scored_products.json
-```
+| File | Purpose |
+| --- | --- |
+| `README.md` | First-read setup, regeneration, dataset, and file-purpose guide. |
+| `data/source/useful_skin_bodycare_products.xlsx` | Product ingredient source sheet. |
+| `data/source/retailer_products_rows.csv.gz` | Compressed retailer catalog metadata source. |
+| `data/source/roopsee_ingredient_scores_v3.xlsx` | Ingredient score master. |
+| `data/Product details and score logic.xlsx` | Doctor-reviewed reference workbook. |
+| `tools/build_automated_scores.py` | Builds the automated ingredient-level scoring payload. |
+| `tools/validate_v2_automated_logic.py` | Checks automated scores against doctor-reviewed references. |
+| `tools/build_final_platform_dataset.py` | Builds the final high-confidence topical UI dataset. |
+| `static/data/final_scored_products.json` | Generated product dataset used by the browser. |
+| `static/app.js` | Browser scoring, ranking, filtering, details, and routine logic. |
+| `static/index.html` | Browser UI shell. |
+| `static/styles.css` | Browser UI styling. |
+| `api/index.py` | Hosted Flask app entrypoint. |
+| `app.py` | Simple local static server. |
 
-Contains the generated product dataset, score layers, metadata, product details, confidence labels, and nearest doctor anchors.
-
-```text
-static/app.js
-```
-
-Applies the live selected profile logic, calculates visible scores, sorts products, renders filters, product cards, details, and routines.
-
-```text
-docs/SCORING_METHODOLOGY.md
-```
-
-This document.
+For every tracked file in the repo, use the file-by-file handover map in `README.md`.
 
 Generator files:
 
