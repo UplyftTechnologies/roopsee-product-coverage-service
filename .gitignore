@@ -14,6 +14,9 @@ outputs/
 # Required checked-in reference data.
 !data/Product details and score logic.xlsx
 !data/products.csv
+!data/source/
+!data/source/*.xlsx
+!data/source/*.csv.gz
 
 # Local environment files.
 .env

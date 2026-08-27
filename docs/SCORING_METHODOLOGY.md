@@ -55,9 +55,9 @@ These numbers come from the generated frontend dataset and can change whenever t
 
 The scoring system uses three main source files:
 
-- Useful product ingredient sheet: contains product names, primary ingredients, and secondary ingredients.
-- Retailer product export: contains product metadata such as brand, MRP, selling price, image, URL, rating, stock, and SKU information.
-- Roopsee ingredient score master: contains ingredient-level suitability scores across skin concerns, skin types, age, and special conditions.
+- `data/source/useful_skin_bodycare_products.xlsx`: contains product names, primary ingredients, and secondary ingredients.
+- `data/source/retailer_products_rows.csv.gz`: compressed retailer export with brand, MRP, selling price, image, URL, rating, stock, SKU information, and source INCI text when available.
+- `data/source/roopsee_ingredient_scores_v3.xlsx`: ingredient-level suitability scores across skin concerns, skin types, age, and special conditions.
 
 The system also uses the existing doctor-scored Roopsee products as a reference set. These are not used as blind copies for new products. They are used as anchors, meaning the system checks whether a new product behaves similarly to known doctor-reviewed products.
 

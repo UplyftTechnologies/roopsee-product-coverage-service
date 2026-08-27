@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import difflib
+import gzip
 import json
 import math
 import os
@@ -14,18 +15,24 @@ import openpyxl
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DOWNLOADS_DIR = Path.home() / "Downloads"
+SOURCE_DIR = REPO_ROOT / "data" / "source"
 
 
 def env_path(name: str, default: Path) -> Path:
     return Path(os.environ.get(name, str(default))).expanduser()
 
 
-USEFUL_PRODUCTS = env_path("ROOPSEE_USEFUL_PRODUCTS", DOWNLOADS_DIR / "useful_skin_bodycare_products.xlsx")
-RETAILER_PRODUCTS = env_path("ROOPSEE_RETAILER_PRODUCTS", DOWNLOADS_DIR / "retailer_products_rows.csv")
-INGREDIENT_SCORES = env_path("ROOPSEE_INGREDIENT_SCORES", DOWNLOADS_DIR / "roopsee_ingredient_scores_v3.xlsx")
+USEFUL_PRODUCTS = env_path("ROOPSEE_USEFUL_PRODUCTS", SOURCE_DIR / "useful_skin_bodycare_products.xlsx")
+RETAILER_PRODUCTS = env_path("ROOPSEE_RETAILER_PRODUCTS", SOURCE_DIR / "retailer_products_rows.csv.gz")
+INGREDIENT_SCORES = env_path("ROOPSEE_INGREDIENT_SCORES", SOURCE_DIR / "roopsee_ingredient_scores_v3.xlsx")
 OUTPUT_DIR = env_path("ROOPSEE_AUTO_OUTPUT_DIR", REPO_ROOT / "outputs" / "roopsee_automated_scoring")
 PAYLOAD_PATH = OUTPUT_DIR / "automated_scoring_payload.json"
+
+
+def open_text(path: Path):
+    if path.suffix == ".gz":
+        return gzip.open(path, mode="rt", newline="", encoding="utf-8-sig")
+    return path.open(newline="", encoding="utf-8-sig")
 
 
 AGE_COLUMNS = ["<16", "17-25", "+>25"]
@@ -1166,7 +1173,7 @@ def read_useful_products() -> list[dict[str, Any]]:
 
 def read_retailer_rows() -> dict[str, list[dict[str, Any]]]:
     by_name: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    with RETAILER_PRODUCTS.open(newline="", encoding="utf-8-sig") as handle:
+    with open_text(RETAILER_PRODUCTS) as handle:
         reader = csv.DictReader(handle)
         for row in reader:
             key = norm_key(row.get("product_name"))

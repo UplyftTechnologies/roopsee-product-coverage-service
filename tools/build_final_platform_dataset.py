@@ -13,11 +13,19 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DOWNLOADS_DIR = Path.home() / "Downloads"
+SOURCE_DIR = REPO_ROOT / "data" / "source"
 
 
 def env_path(name: str, default: Path) -> Path:
     return Path(os.environ.get(name, str(default))).expanduser()
+
+
+def display_path(path: Path) -> str:
+    resolved = path.resolve()
+    try:
+        return str(resolved.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(resolved)
 
 
 AUTO_OUTPUT_DIR = env_path("ROOPSEE_AUTO_OUTPUT_DIR", REPO_ROOT / "outputs" / "roopsee_automated_scoring")
@@ -25,9 +33,9 @@ AUTO_PAYLOAD = env_path("ROOPSEE_AUTO_PAYLOAD", AUTO_OUTPUT_DIR / "automated_sco
 FINAL_DATASET = env_path("ROOPSEE_FINAL_DATASET", REPO_ROOT / "static" / "data" / "final_scored_products.json")
 V2_PATH = env_path("ROOPSEE_V2_LOGIC_PATH", REPO_ROOT / "tools" / "validate_v2_automated_logic.py")
 FINAL_VALIDATION_SUMMARY = AUTO_OUTPUT_DIR / "final_rank_fusion_algorithm_validation_summary.json"
-USEFUL_PRODUCTS = env_path("ROOPSEE_USEFUL_PRODUCTS", DOWNLOADS_DIR / "useful_skin_bodycare_products.xlsx")
-RETAILER_PRODUCTS = env_path("ROOPSEE_RETAILER_PRODUCTS", DOWNLOADS_DIR / "retailer_products_rows.csv")
-INGREDIENT_SCORES = env_path("ROOPSEE_INGREDIENT_SCORES", DOWNLOADS_DIR / "roopsee_ingredient_scores_v3.xlsx")
+USEFUL_PRODUCTS = env_path("ROOPSEE_USEFUL_PRODUCTS", SOURCE_DIR / "useful_skin_bodycare_products.xlsx")
+RETAILER_PRODUCTS = env_path("ROOPSEE_RETAILER_PRODUCTS", SOURCE_DIR / "retailer_products_rows.csv.gz")
+INGREDIENT_SCORES = env_path("ROOPSEE_INGREDIENT_SCORES", SOURCE_DIR / "roopsee_ingredient_scores_v3.xlsx")
 
 
 def load_module(path: Path, module_name: str) -> Any:
@@ -1148,10 +1156,10 @@ def build_dataset() -> dict[str, Any]:
             "selectionRule": "High confidence topical skincare products only",
             "doctorReferenceProductCount": len(doctor_records),
             "sourceFiles": {
-                "usefulProducts": str(USEFUL_PRODUCTS),
-                "retailerProducts": str(RETAILER_PRODUCTS),
-                "ingredientScores": str(INGREDIENT_SCORES),
-                "automatedPayload": str(AUTO_PAYLOAD),
+                "usefulProducts": display_path(USEFUL_PRODUCTS),
+                "retailerProducts": display_path(RETAILER_PRODUCTS),
+                "ingredientScores": display_path(INGREDIENT_SCORES),
+                "automatedPayload": display_path(AUTO_PAYLOAD),
             },
             "visibleScoreWeights": VISIBLE_SCORE_WEIGHTS,
             "rankFusionWeights": RANK_FUSION_WEIGHTS,

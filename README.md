@@ -11,6 +11,7 @@ This repo contains the handover-ready Roopsee scoring playground: a lightweight 
 - `tools/build_final_platform_dataset.py`: builds the final frontend dataset.
 - `docs/SCORING_METHODOLOGY.md`: non-technical and technical explanation of the scoring system.
 - `data/Product details and score logic.xlsx` and `data/products.csv`: doctor-reference data used for validation/calibration.
+- `data/source/`: raw source files used to regenerate automated scores. The large retailer CSV is stored as `retailer_products_rows.csv.gz` to keep the repo cloneable without Git LFS.
 
 ## Current Dataset
 
@@ -34,7 +35,7 @@ For Render/Railway-style hosting, the Flask entrypoint is `api/index.py`.
 
 ## How To Regenerate Scores
 
-Place the latest source files locally, then run:
+The source files are checked into `data/source/`, so the default regeneration command is:
 
 ```bash
 python3 tools/build_automated_scores.py
@@ -42,7 +43,7 @@ python3 tools/validate_v2_automated_logic.py
 python3 tools/build_final_platform_dataset.py
 ```
 
-The scripts default to these filenames in `~/Downloads`, and each path can be overridden with environment variables:
+If you want to test with newer local files, each source path can still be overridden with environment variables:
 
 - `ROOPSEE_USEFUL_PRODUCTS`
 - `ROOPSEE_RETAILER_PRODUCTS`
